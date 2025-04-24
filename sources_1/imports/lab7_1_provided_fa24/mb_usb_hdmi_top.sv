@@ -1,6 +1,6 @@
 `timescale 1 ns / 1 ps
 
-module lab7_1_top(
+module final_project(
     input logic Clk,
     input logic reset_rtl_0,
     
