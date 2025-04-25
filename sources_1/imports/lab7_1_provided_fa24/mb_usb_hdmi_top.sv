@@ -80,5 +80,11 @@ module final_project(
         .hex_grid(hex_gridB)
     );
     
+    test_ascii_generate test (
+        .clk(Clk),
+        .execute(execute),
+        .generated_ascii(generated_ascii),
+        .generate_count(generate_count)
+    );
     
 endmodule
