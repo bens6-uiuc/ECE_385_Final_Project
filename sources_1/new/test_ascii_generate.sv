@@ -8,27 +8,43 @@ module test_ascii_generate(
     output logic [11:0] generate_count
     );
     
+    logic [19:0] clk_div_counter = 0;
+    logic slow_clk_en = 0;
+    
+    // Generate enable pulse every 100 clock cycles
+    always_ff @(posedge clk) begin
+        if (clk_div_counter == 1000000) begin
+            clk_div_counter <= 0;
+            slow_clk_en <= 1;
+        end else begin
+            clk_div_counter <= clk_div_counter + 1;
+            slow_clk_en <= 0;
+        end
+    end
+    
     always_ff @ (posedge clk)
     begin
-        if(execute && (generate_count < 27))
+        if(slow_clk_en) 
         begin
-            generated_ascii = generated_ascii + 1;
-            generate_count = generate_count + 1;
-        end
-        else 
-        begin
-            if(generate_count > 25)
+            if(execute && (generate_count < 27))
             begin
-                generated_ascii = generated_ascii;
-                generate_count = generate_count;  
+                generated_ascii = generated_ascii + 1;
+                generate_count = generate_count + 1;
             end
             else 
             begin
-                generated_ascii = 96;
-                generate_count = 0;  
-            end      
+                if(generate_count > 25)
+                begin
+                    generated_ascii = generated_ascii;
+                    generate_count = generate_count;  
+                end
+                else 
+                begin
+                    generated_ascii = 96;
+                    generate_count = 0;  
+                end      
+            end
         end
-    
     end  
     
 endmodule

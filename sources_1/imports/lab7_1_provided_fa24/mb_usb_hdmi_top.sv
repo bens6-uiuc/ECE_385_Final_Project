@@ -75,7 +75,7 @@ module final_project(
     hex_driver HexB (
         .clk(Clk),
         .reset(reset_ah),
-        .in({keycode0_gpio[15:12], keycode0_gpio[11:8], keycode0_gpio[7:4], keycode0_gpio[3:0]}),
+        .in({keycode0_gpio[15:12], keycode0_gpio[11:8], generated_ascii[7:4], generated_ascii[3:0]}),
         .hex_seg(hex_segB),
         .hex_grid(hex_gridB)
     );
@@ -85,6 +85,42 @@ module final_project(
         .execute(execute),
         .generated_ascii(generated_ascii),
         .generate_count(generate_count)
+    );
+    
+    rtl_ddr3_top ddr3(
+        .sys_clk_n, //differential system clock input
+        .sys_clk_p, //note that this is different than previous designs
+        .ddr3_addr,
+        .ddr3_ba,
+        .ddr3_cas_n,
+        .ddr3_ck_n, //differential DDR3 clock, typically between 300-333MHz
+        .ddr3_ck_p,
+        .ddr3_cke,
+        .ddr3_dm,
+        .ddr3_dq, //bidirectional signals need to be of type wire
+        .ddr3_dqs_n,
+        .ddr3_dqs_p,
+        .ddr3_odt,   
+        .ddr3_ras_n,
+        .ddr3_reset_n,
+        .ddr3_we_n,
+        .clk_ref_i,
+        .sys_rst,
+    
+        .sd_sclk,
+        .sd_mosi,
+        .sd_cs,
+        .sd_miso,
+    
+        .hex_segA,
+        .hex_segB,
+        .hex_gridA,
+        .hex_gridB,
+    
+        .SW,
+        .ram_init_error,
+        .ram_init_done,
+        .LED
     );
     
 endmodule

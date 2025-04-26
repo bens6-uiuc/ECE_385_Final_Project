@@ -36,7 +36,7 @@ initial begin: TEST_ASCII
 
     execute <= 'b1; 
 
-    repeat (1000) @(posedge clk);
+    repeat (100000) @(posedge clk);
 
             
     $finish();
