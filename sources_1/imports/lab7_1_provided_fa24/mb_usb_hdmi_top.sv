@@ -4,10 +4,10 @@ module final_project(
     input logic Clk,
     input logic reset_rtl_0,
     
-    input logic [15:0] sw_i,
+    input logic [15:0]  SW,
     output logic        ram_init_error,
     output logic        ram_init_done,
-    output logic [15:0] led_o,
+    output logic[15:0]  LED,
     
     //SD Card
     output logic        sd_sclk,
@@ -205,7 +205,7 @@ module final_project(
        .ram_rd_data(app_rd_data),
        .read_address ({11'b00000000000,SW}),
        .read_data_out (read_data_display),  //16-bit output word
-       .read_data_valid (led_o[0])
+       .read_data_valid (LED[0])
     );
     
     assign app_wdf_mask = 'h00; //for use when writing smaller than 64-bit words (not here)
@@ -216,7 +216,7 @@ module final_project(
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
-                      .in({sw_i[15:12], sw_i[11:8], sw_i[7:4], sw_i[3:0]}),
+                      .in({SW[15:12], SW[11:8], SW[7:4], SW[3:0]}),
                       .hex_seg(hex_segA),
                       .hex_grid(hex_gridA));
  
