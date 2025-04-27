@@ -64,21 +64,6 @@ module final_project(
     
     
    //Keycode HEX drivers
-    hex_driver HexA (
-        .clk(Clk),
-        .reset(reset_ah),
-        .in({keycode0_gpio[31:28], keycode0_gpio[27:24], keycode0_gpio[23:20], keycode0_gpio[19:16]}),
-        .hex_seg(hex_segA),
-        .hex_grid(hex_gridA)
-    );
-    
-    hex_driver HexB (
-        .clk(Clk),
-        .reset(reset_ah),
-        .in({keycode0_gpio[15:12], keycode0_gpio[11:8], generated_ascii[7:4], generated_ascii[3:0]}),
-        .hex_seg(hex_segB),
-        .hex_grid(hex_gridB)
-    );
     
     test_ascii_generate test (
         .clk(Clk),
