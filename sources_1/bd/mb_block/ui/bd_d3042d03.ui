@@ -1,7 +1,7 @@
 {
    "ActiveEmotionalView":"Default View",
-   "Default View_ScaleFactor":"1.16629",
-   "Default View_TopLeft":"1879,244",
+   "Default View_ScaleFactor":"0.717936",
+   "Default View_TopLeft":"1252,85",
    "ExpandedHierarchyInLayout":"",
    "guistr":"# # String gsaved with Nlview 7.0r6  2020-01-29 bk=1.5227 VDI=41 GEI=36 GUI=JA:10.0 non-TLS
 #  -string -flagsOSRD
@@ -12,13 +12,13 @@ preplace port gpio_usb_keycode_0 -pg 1 -lvl 7 -x 2180 -y 510 -defaultsOSRD
 preplace port gpio_usb_keycode_1 -pg 1 -lvl 7 -x 2180 -y 540 -defaultsOSRD
 preplace port gpio_usb_rst -pg 1 -lvl 7 -x 2180 -y 300 -defaultsOSRD
 preplace port gpio_execute -pg 1 -lvl 7 -x 2180 -y 630 -defaultsOSRD
+preplace port gpio_generate_count -pg 1 -lvl 7 -x 2180 -y 910 -defaultsOSRD
+preplace port gpio_generated_ascii -pg 1 -lvl 7 -x 2180 -y 770 -defaultsOSRD
 preplace port port-id_clk_100MHz -pg 1 -lvl 0 -x -40 -y 550 -defaultsOSRD
 preplace port port-id_reset_rtl_0 -pg 1 -lvl 0 -x -40 -y 460 -defaultsOSRD
 preplace port port-id_usb_spi_miso -pg 1 -lvl 0 -x -40 -y 690 -defaultsOSRD
 preplace port port-id_usb_spi_mosi -pg 1 -lvl 7 -x 2180 -y 1050 -defaultsOSRD
 preplace port port-id_usb_spi_sclk -pg 1 -lvl 7 -x 2180 -y 1090 -defaultsOSRD
-preplace port gpio_generated_ascii -pg 1 -lvl 7 -x 2180 -y 770 -defaultsOSRD
-preplace port gpio_generate_count -pg 1 -lvl 7 -x 2180 -y 910 -defaultsOSRD
 preplace portBus usb_spi_ss -pg 1 -lvl 7 -x 2180 -y 1110 -defaultsOSRD
 preplace inst microblaze_0 -pg 1 -lvl 4 -x 1160 -y 510 -defaultsOSRD
 preplace inst microblaze_0_local_memory -pg 1 -lvl 5 -x 1630 -y 720 -defaultsOSRD
@@ -39,49 +39,49 @@ preplace inst gpio_execute -pg 1 -lvl 6 -x 1980 -y 630 -defaultsOSRD
 preplace inst gpio_generated_ascii -pg 1 -lvl 6 -x 1980 -y 770 -defaultsOSRD
 preplace inst gpio_generate_count -pg 1 -lvl 6 -x 1980 -y 910 -defaultsOSRD
 preplace netloc axi_quad_spi_0_io0_o 1 6 1 N 1050
-preplace netloc axi_quad_spi_0_ip2intc_irpt 1 3 4 890 1200 NJ 1200 NJ 1200 2100
+preplace netloc axi_quad_spi_0_ip2intc_irpt 1 3 4 890 1200 NJ 1200 NJ 1200 2110
 preplace netloc axi_quad_spi_0_sck_o 1 6 1 N 1090
 preplace netloc axi_quad_spi_0_ss_o 1 6 1 N 1110
-preplace netloc axi_timer_0_interrupt 1 3 2 900 420 1400
-preplace netloc axi_uartlite_0_interrupt 1 3 4 870 1220 NJ 1220 NJ 1220 2130
+preplace netloc axi_timer_0_interrupt 1 3 2 900 420 1390
+preplace netloc axi_uartlite_0_interrupt 1 3 4 870 1220 NJ 1220 NJ 1220 2140
 preplace netloc clk_100MHz_1 1 0 1 NJ 550
-preplace netloc clk_wiz_1_locked 1 1 1 210 520n
-preplace netloc gpio_usb_int_ip2intc_irpt 1 3 4 900 1210 NJ 1210 NJ 1210 2120
-preplace netloc mdm_1_debug_sys_rst 1 0 4 -20 470 210 200 NJ 200 860
-preplace netloc microblaze_0_Clk 1 1 5 200 380 600 420 890 400 1480 -20 1840
+preplace netloc clk_wiz_1_locked 1 1 1 220 520n
+preplace netloc gpio_usb_int_ip2intc_irpt 1 3 4 900 1210 NJ 1210 NJ 1210 2130
+preplace netloc mdm_1_debug_sys_rst 1 0 4 -20 470 220 200 NJ 200 860
+preplace netloc microblaze_0_Clk 1 1 5 210 380 600 420 890 400 1470 -20 1830
 preplace netloc reset_rtl_0_1 1 0 2 NJ 460 NJ
-preplace netloc rst_clk_wiz_1_100M_bus_struct_reset 1 2 3 580 180 NJ 180 1440J
+preplace netloc rst_clk_wiz_1_100M_bus_struct_reset 1 2 3 580 180 NJ 180 1430J
 preplace netloc rst_clk_wiz_1_100M_mb_reset 1 2 2 610 440 870J
-preplace netloc rst_clk_wiz_1_100M_peripheral_aresetn 1 2 4 590 430 870J 410 1450 -10 1850
-preplace netloc usb_spi_miso_1 1 0 7 NJ 690 NJ 690 NJ 690 NJ 690 1420J 1190 NJ 1190 2110
-preplace netloc xlconcat_0_dout 1 2 3 610 170 NJ 170 1410
-preplace netloc axi_uartlite_0_UART 1 6 1 2150J -80n
-preplace netloc gpio_usb_int_GPIO 1 6 1 2140 340n
-preplace netloc gpio_usb_keycode_GPIO 1 6 1 2150J 480n
-preplace netloc gpio_usb_keycode_GPIO2 1 6 1 2140J 500n
-preplace netloc gpio_usb_rst_GPIO 1 6 1 2140 210n
-preplace netloc hdmi_text_controller_0_HDMI 1 6 1 2150J 70n
-preplace netloc microblaze_0_axi_dp 1 4 1 1460 70n
-preplace netloc microblaze_0_axi_periph_M01_AXI 1 5 1 1810 -90n
-preplace netloc microblaze_0_axi_periph_M02_AXI 1 5 1 1820 50n
-preplace netloc microblaze_0_axi_periph_M03_AXI 1 5 1 1810 290n
-preplace netloc microblaze_0_axi_periph_M04_AXI 1 3 3 880 0 NJ 0 1790
-preplace netloc microblaze_0_axi_periph_M05_AXI 1 5 1 N 330
-preplace netloc microblaze_0_axi_periph_M06_AXI 1 5 1 1820 350n
-preplace netloc microblaze_0_axi_periph_M07_AXI 1 5 1 1800 190n
-preplace netloc microblaze_0_debug 1 3 1 N 500
-preplace netloc microblaze_0_dlmb_1 1 4 1 1470 490n
-preplace netloc microblaze_0_ilmb_1 1 4 1 1430 510n
-preplace netloc microblaze_0_intc_axi 1 2 4 600 10 NJ 10 NJ 10 1780
-preplace netloc microblaze_0_interrupt 1 3 1 880 310n
+preplace netloc rst_clk_wiz_1_100M_peripheral_aresetn 1 2 4 590 430 870J 410 1440 -10 1840
+preplace netloc usb_spi_miso_1 1 0 7 NJ 690 NJ 690 NJ 690 NJ 690 1410J 1190 NJ 1190 2120
+preplace netloc xlconcat_0_dout 1 2 3 610 170 NJ 170 1400
+preplace netloc axi_uartlite_0_UART 1 6 1 2160J -80n
 preplace netloc gpio_execute_GPIO 1 6 1 N 630
-preplace netloc microblaze_0_axi_periph_M08_AXI 1 5 1 1830 390n
 preplace netloc gpio_generate_count_GPIO 1 6 1 N 910
-preplace netloc microblaze_0_axi_periph_M09_AXI 1 5 1 1800 410n
 preplace netloc gpio_generated_ascii_GPIO 1 6 1 N 770
-preplace netloc microblaze_0_axi_periph_M10_AXI 1 5 1 1780 430n
+preplace netloc gpio_usb_int_GPIO 1 6 1 2150 340n
+preplace netloc gpio_usb_keycode_GPIO 1 6 1 2160J 480n
+preplace netloc gpio_usb_keycode_GPIO2 1 6 1 2150J 500n
+preplace netloc gpio_usb_rst_GPIO 1 6 1 2150 210n
+preplace netloc hdmi_text_controller_0_HDMI 1 6 1 2160J 70n
+preplace netloc microblaze_0_axi_dp 1 4 1 1450 70n
+preplace netloc microblaze_0_axi_periph_M01_AXI 1 5 1 1800 -90n
+preplace netloc microblaze_0_axi_periph_M02_AXI 1 5 1 1810 50n
+preplace netloc microblaze_0_axi_periph_M03_AXI 1 5 1 1800 290n
+preplace netloc microblaze_0_axi_periph_M04_AXI 1 3 3 880 0 NJ 0 1780
+preplace netloc microblaze_0_axi_periph_M05_AXI 1 5 1 N 330
+preplace netloc microblaze_0_axi_periph_M06_AXI 1 5 1 1810 350n
+preplace netloc microblaze_0_axi_periph_M07_AXI 1 5 1 1790 190n
+preplace netloc microblaze_0_axi_periph_M08_AXI 1 5 1 1820 390n
+preplace netloc microblaze_0_axi_periph_M09_AXI 1 5 1 1790 410n
+preplace netloc microblaze_0_axi_periph_M10_AXI 1 5 1 1770 430n
+preplace netloc microblaze_0_debug 1 3 1 N 500
+preplace netloc microblaze_0_dlmb_1 1 4 1 1460 490n
+preplace netloc microblaze_0_ilmb_1 1 4 1 1420 510n
+preplace netloc microblaze_0_intc_axi 1 2 4 600 10 NJ 10 NJ 10 1770
+preplace netloc microblaze_0_interrupt 1 3 1 880 310n
 levelinfo -pg 1 -40 110 410 740 1160 1630 1980 2180
-pagesize -pg 1 -db -bbox -sgen -180 -150 2370 1270
+pagesize -pg 1 -db -bbox -sgen -180 -150 2380 1270
 "
 }
 {
