@@ -1,10 +1,11 @@
 create_clock -period 10.000 -name clk_100 -waveform {0.000 5.000} [get_ports Clk]
 
-
 # PadFunction: IO_L12P_T1_MRCC_14 (SCHEMATIC CLK_100MHZ)
 set_property IOSTANDARD LVCMOS33 [get_ports clk_ref_i]
 set_property PACKAGE_PIN N15 [get_ports clk_ref_i]
 create_clock -period 10.000 [get_ports clk_ref_i]
+
+# PadFunction: IO_L12P_T1_MRCC_14 (SCHEMATIC CLK_100MHZ)
 
 set_property IOSTANDARD LVCMOS33 [get_ports Clk]
 set_property IOSTANDARD LVCMOS25 [get_ports reset_rtl_0]
@@ -83,16 +84,16 @@ set_property PACKAGE_PIN H5 [get_ports {hex_gridB[3]}]
 
 
 #HDMI Signals
-set_property -dict { PACKAGE_PIN V17   IOSTANDARD TMDS_33 } [get_ports {hdmi_tmds_clk_n}]
-set_property -dict { PACKAGE_PIN U16   IOSTANDARD TMDS_33 } [get_ports {hdmi_tmds_clk_p}]
+set_property -dict {PACKAGE_PIN V17 IOSTANDARD TMDS_33} [get_ports hdmi_tmds_clk_n]
+set_property -dict {PACKAGE_PIN U16 IOSTANDARD TMDS_33} [get_ports hdmi_tmds_clk_p]
 
-set_property -dict { PACKAGE_PIN U18   IOSTANDARD TMDS_33  } [get_ports {hdmi_tmds_data_n[0]}]
-set_property -dict { PACKAGE_PIN R17   IOSTANDARD TMDS_33  } [get_ports {hdmi_tmds_data_n[1]}]
-set_property -dict { PACKAGE_PIN T14   IOSTANDARD TMDS_33  } [get_ports {hdmi_tmds_data_n[2]}]
-                                    
-set_property -dict { PACKAGE_PIN U17   IOSTANDARD TMDS_33  } [get_ports {hdmi_tmds_data_p[0]}]
-set_property -dict { PACKAGE_PIN R16   IOSTANDARD TMDS_33  } [get_ports {hdmi_tmds_data_p[1]}]
-set_property -dict { PACKAGE_PIN R14   IOSTANDARD TMDS_33  } [get_ports {hdmi_tmds_data_p[2]}]
+set_property -dict {PACKAGE_PIN U18 IOSTANDARD TMDS_33} [get_ports {hdmi_tmds_data_n[0]}]
+set_property -dict {PACKAGE_PIN R17 IOSTANDARD TMDS_33} [get_ports {hdmi_tmds_data_n[1]}]
+set_property -dict {PACKAGE_PIN T14 IOSTANDARD TMDS_33} [get_ports {hdmi_tmds_data_n[2]}]
+
+set_property -dict {PACKAGE_PIN U17 IOSTANDARD TMDS_33} [get_ports {hdmi_tmds_data_p[0]}]
+set_property -dict {PACKAGE_PIN R16 IOSTANDARD TMDS_33} [get_ports {hdmi_tmds_data_p[1]}]
+set_property -dict {PACKAGE_PIN R14 IOSTANDARD TMDS_33} [get_ports {hdmi_tmds_data_p[2]}]
 
 # On-board Slide Switches
 set_property -dict {PACKAGE_PIN G1 IOSTANDARD LVCMOS25} [get_ports {SW[0]}]
@@ -142,7 +143,6 @@ set_property -dict {PACKAGE_PIN P18 IOSTANDARD LVCMOS33} [get_ports sd_sclk]
 
 #DDR3
 # PadFunction: IO_L1N_T0_34 (SCHEMATIC DDR_DQ0)
-current_instance -quiet
 set_property SLEW FAST [get_ports {ddr3_dq[0]}]
 set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq[0]}]
 set_property IOSTANDARD SSTL135 [get_ports {ddr3_dq[0]}]
@@ -349,14 +349,8 @@ set_property IOSTANDARD SSTL135 [get_ports ddr3_reset_n]
 set_property PACKAGE_PIN M5 [get_ports ddr3_reset_n]
 
 # PadFunction: IO_L24N_T3_34 (SCHEMATIC DDR_CKE)
-set_property SLEW FAST [get_ports {ddr3_cke[0]}]
-set_property IOSTANDARD SSTL135 [get_ports {ddr3_cke[0]}]
-set_property PACKAGE_PIN T5 [get_ports {ddr3_cke[0]}]
 
 # PadFunction: IO_25_34 (SCHEMATIC DDR_ODT)
-set_property SLEW FAST [get_ports {ddr3_odt[0]}]
-set_property IOSTANDARD SSTL135 [get_ports {ddr3_odt[0]}]
-set_property PACKAGE_PIN P7 [get_ports {ddr3_odt[0]}]
 
 # PadFunction: IO_L1P_T0_34 (SCHEMATIC DDR_LDM)
 set_property SLEW FAST [get_ports {ddr3_dm[0]}]
@@ -369,12 +363,12 @@ set_property IOSTANDARD SSTL135 [get_ports {ddr3_dm[1]}]
 set_property PACKAGE_PIN M3 [get_ports {ddr3_dm[1]}]
 
 # PadFunction: IO_L12P_T1_MRCC_35 (SCHEMATIC DDR_REF_CLK_P)
-#set_property IOSTANDARD LVDS_25 [get_ports sys_clk_p]
+set_property IOSTANDARD LVDS_25 [get_ports sys_clk_p]
 
 # PadFunction: IO_L12N_T1_MRCC_35 (SCHEMATIC DDR_REF_CLK_N)
-#set_property IOSTANDARD LVDS_25 [get_ports sys_clk_n]
-#set_property PACKAGE_PIN C1 [get_ports sys_clk_p]
-#set_property PACKAGE_PIN B1 [get_ports sys_clk_n]
+set_property IOSTANDARD LVDS_25 [get_ports sys_clk_n]
+set_property PACKAGE_PIN C1 [get_ports sys_clk_p]
+set_property PACKAGE_PIN B1 [get_ports sys_clk_n]
 
 # PadFunction: IO_L3P_T0_DQS_34 (SCHEMATIC DDR_LDQS_P)
 set_property SLEW FAST [get_ports {ddr3_dqs_p[0]}]
@@ -401,19 +395,10 @@ set_property PACKAGE_PIN N3 [get_ports {ddr3_dqs_p[1]}]
 set_property PACKAGE_PIN N2 [get_ports {ddr3_dqs_n[1]}]
 
 # PadFunction: IO_L21P_T3_DQS_34 (SCHEMATIC DDR_CLK_P)
-set_property SLEW FAST [get_ports {ddr3_ck_p[0]}]
-set_property IOSTANDARD DIFF_SSTL135 [get_ports {ddr3_ck_p[0]}]
 
 # PadFunction: IO_L21N_T3_DQS_34 (SCHEMATIC DDR_CLK_N)
-set_property SLEW FAST [get_ports {ddr3_ck_n[0]}]
-set_property IOSTANDARD DIFF_SSTL135 [get_ports {ddr3_ck_n[0]}]
-set_property PACKAGE_PIN R5 [get_ports {ddr3_ck_p[0]}]
-set_property PACKAGE_PIN T4 [get_ports {ddr3_ck_n[0]}]
 
 set_property INTERNAL_VREF 0.675 [get_iobanks 34]
-
-set_property IOSTANDARD LVCMOS25 [get_ports sys_rst]
-set_property PACKAGE_PIN J2 [get_ports sys_rst]
 
 # PadFunction: IO_L12N_T1_MRCC_16 (SCHEMATIC RGB0_G)
 set_property IOSTANDARD LVCMOS33 [get_ports ram_init_done]
@@ -422,3 +407,6 @@ set_property PACKAGE_PIN A9 [get_ports ram_init_done]
 # PadFunction: IO_L14N_T2_SRCC_16 (SCHEMATIC RGB1_R)
 set_property IOSTANDARD LVCMOS33 [get_ports ram_init_error]
 set_property PACKAGE_PIN A11 [get_ports ram_init_error]
+
+set_property IOSTANDARD LVCMOS25 [get_ports sys_rst]
+set_property PACKAGE_PIN J5 [get_ports sys_rst]

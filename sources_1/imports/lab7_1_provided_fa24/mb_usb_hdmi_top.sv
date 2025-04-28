@@ -1,7 +1,7 @@
 `timescale 1 ns / 1 ps
 
 module final_project(
-    input logic Clk,
+    input logic clk_ref_i,
     input logic reset_rtl_0,
     
     input logic [15:0]  SW,
@@ -62,7 +62,7 @@ module final_project(
     assign reset_ah = reset_rtl_0;
     
     mb_block_wrapper lab_7_1_mb_(
-        .clk_100MHz(Clk),
+        .clk_100MHz(clk_ref_i),
         .reset_rtl_0(~reset_ah),
         .uart_rtl_0_rxd(uart_rtl_0_rxd), 
         .uart_rtl_0_txd(uart_rtl_0_txd),
@@ -85,12 +85,9 @@ module final_project(
     );
 
     logic [31:0] keycode0_gpio, keycode1_gpio;
-
-    logic reset_ah;
     logic execute;
     logic [7:0] generated_ascii;
     logic [11:0] generate_count;
-    assign reset_ah = reset_rtl_0;
     
     
    
@@ -167,9 +164,9 @@ module final_project(
        .sys_clk_n                      (sys_clk_n),
 
         // Reference Clock Ports
-       .clk_ref_i                      (Clk),
+       .clk_ref_i                      (clk_ref_i),
        .device_temp                    (),
-       .sys_rst                        (sys_rst)
+       .sys_rst                        (reset_ah)
    );
    
     sdcard_init #(.MAX_RAM_ADDRESS(27'h03FFFF),//copy 256KBytes to SDRAM
@@ -187,10 +184,10 @@ module final_project(
     .ram_wdf_end(app_wdf_end),       //toggle every other word
     .ram_init_error(ram_init_error), //error initializing
     .ram_init_done(ram_init_done),   //done with reading all MAX_RAM_ADDRESS words
-    .cs_bo (), 
-    .sclk_o (),
-    .mosi_o (),
-    .miso_i ()
+    .cs_bo (sd_cs), 
+    .sclk_o (sd_sclk),
+    .mosi_o (sd_mosi),
+    .miso_i (sd_miso)
     );
     
     ram_reader ram_reader_0(
