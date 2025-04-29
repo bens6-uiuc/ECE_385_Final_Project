@@ -72,7 +72,7 @@ initial begin: CLOCK_INITIALIZATION
 end 
 
 always begin : CLOCK_GENERATION
-    #1 clk_ref_i = ~clk;
+    #1 clk_ref_i = ~clk_ref_i;
 end
 
 
