@@ -23,6 +23,7 @@
 module inference(
     input logic clk,
     input logic [7:0] input_ascii,
+    input logic execute,
     
     output logic [7:0] generated_ascii,
     output logic [11:0] generate_count,
@@ -32,6 +33,8 @@ module inference(
     logic [7:0] generated_ascii;
     logic [11:0] generate_count;
     logic [6:0]token;
+    logic [26:0] embedding_address;
+    logic [3:0] embedding_counter;
     
     logic [31:0] hidden_layer[16];
     
@@ -39,6 +42,21 @@ module inference(
         .input_ascii(input_ascii),
         .output_token(token)
     );
+    
+    always_ff @ (posedge clk) //Maybe make this based on the ram read valid signal???
+    begin
+        if(execute)
+        begin
+            embedding_address <= (token * 16) + embedding_counter; 
+            embedding_counter <= embedding_counter + 1;
+        end
+        else
+        begin
+            embedding_counter <= 0;
+        end
+    end
+    
+    
     
     floating_point_adder adder1 (
   .aclk(clk),                                  // input wire aclk
@@ -65,7 +83,6 @@ module inference(
   .m_axis_result_tready(m_axis_result_tready),  // input wire m_axis_result_tready
   .m_axis_result_tdata(m_axis_result_tdata)    // output wire [31 : 0] m_axis_result_tdata
 );
-
 
     
 endmodule

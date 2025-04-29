@@ -1,24 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 04/27/2025 09:23:28 PM
-// Design Name: 
-// Module Name: floating_point_sim
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module floating_point_sim();
 
@@ -87,7 +67,7 @@ initial begin: TEST_FLOATING
     a_valid = 'b0;
     b_valid = 'b0;
     
-    repeat (20000) @(posedge clk);
+    repeat (2000000) @(posedge clk);
             
     $finish();
 end  
