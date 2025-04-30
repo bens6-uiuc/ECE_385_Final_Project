@@ -69,11 +69,20 @@ module inference(
     
     logic [7:0] generated_ascii;
     logic [11:0] generate_count;
-    logic [6:0]token;
+    logic [6:0] token;
+    
+    logic [26:0] read_address;
+    logic read_data_valid;
     logic [26:0] embedding_address;
     logic [3:0] embedding_counter;
+    logic reset_hidden_layer; //NEED TO IMPLEMENT
     
-    logic [31:0] hidden_layer[16];
+    logic [15:0] hidden_layer[32];
+    logic [15:0] embedding_layer[16];
+    logic [15:0] logits[76];
+    logic [1:0] layer_count;
+    logic embedding_done;
+    integer i;
     
     ascii_to_token (
         .input_ascii(input_ascii),
@@ -83,16 +92,59 @@ module inference(
     always_ff @ (posedge clk) //Maybe make this based on the ram read valid signal???
     begin
         if(execute)
-        begin
-            embedding_address <= (token * 16) + embedding_counter; 
-            embedding_counter <= embedding_counter + 1;
-        end
-        else
-        begin
-            embedding_counter <= 0;
-        end
+            begin
+                if (!embedding_done) 
+                    begin
+                        if(read_data_valid) //New embedding value received 
+                        begin
+                            if (embedding_counter == 15)
+                            begin
+                                embedding_done <= 0;
+                            end
+                            embedding_layer[embedding_counter] <= ram_data_out;
+                            embedding_counter <= embedding_counter + 1;
+                        end
+                    end
+                else //Embedding layer done
+                    begin
+                        for(i = 0; i < 32; i++)
+                        begin
+                            
+                        
+                        end
+                    end
+            end
+        else // If next token is not being inferenced
+            begin
+                
+                if(reset_hidden_layer) //If first token has not been sent yet
+                begin
+                    embedding_counter <= 0;
+                    layer_count <= 0;
+                    embedding_done <= 0;
+                    for (i = 0; i < 16; i = i + 1) 
+                    begin
+                        hidden_layer[i] <= 0;
+                    end 
+                end
+                else //If waiting for next token
+                begin
+                    embedding_counter <= 0;
+                    layer_count <= 0;
+                    embedding_done <= 0;
+                    for (i = 0; i < 16; i = i + 1) 
+                    begin
+                        hidden_layer[i] <= hidden_layer[i];
+                    end 
+                end
+            end
     end
     
+    always_comb //Pretty sure all addresses need to be combinational
+        begin
+            embedding_address = (token * 16) + embedding_counter;
+            read_address = embedding_address;
+        end
     
     ram_reader ram_reader_0(
        .clk(ui_clk),
@@ -104,14 +156,35 @@ module inference(
        .ram_rd_valid(app_rd_data_valid),
        .ram_rd_data_end (app_rd_data_end),
        .ram_rd_data(app_rd_data),
-       .read_address ({11'b00000000000,SW}),
-       .read_data_out (read_data_display),  //16-bit output word
-       .read_data_valid (LED[0])
+       .read_address (read_address),
+       .read_data_out (ram_data_out),  //16-bit output word
+       .read_data_valid (read_data_valid)
     );
     
+    accumulator accumulator (
+  .aclk(aclk),                                  // input wire aclk
+  .s_axis_a_tvalid(s_axis_a_tvalid),            // input wire s_axis_a_tvalid
+  .s_axis_a_tready(s_axis_a_tready),            // output wire s_axis_a_tready
+  .s_axis_a_tdata(s_axis_a_tdata),              // input wire [15 : 0] s_axis_a_tdata
+  .s_axis_a_tlast(s_axis_a_tlast),              // input wire s_axis_a_tlast
+  .m_axis_result_tvalid(m_axis_result_tvalid),  // output wire m_axis_result_tvalid
+  .m_axis_result_tready(m_axis_result_tready),  // input wire m_axis_result_tready
+  .m_axis_result_tdata(m_axis_result_tdata),    // output wire [15 : 0] m_axis_result_tdata
+  .m_axis_result_tlast(m_axis_result_tlast)    // output wire m_axis_result_tlast
+    );
     
-    
-
+    multiply multiply (
+  .aclk(aclk),                                  // input wire aclk
+  .s_axis_a_tvalid(s_axis_a_tvalid),            // input wire s_axis_a_tvalid
+  .s_axis_a_tready(s_axis_a_tready),            // output wire s_axis_a_tready
+  .s_axis_a_tdata(s_axis_a_tdata),              // input wire [15 : 0] s_axis_a_tdata
+  .s_axis_b_tvalid(s_axis_b_tvalid),            // input wire s_axis_b_tvalid
+  .s_axis_b_tready(s_axis_b_tready),            // output wire s_axis_b_tready
+  .s_axis_b_tdata(s_axis_b_tdata),              // input wire [15 : 0] s_axis_b_tdata
+  .m_axis_result_tvalid(m_axis_result_tvalid),  // output wire m_axis_result_tvalid
+  .m_axis_result_tready(m_axis_result_tready),  // input wire m_axis_result_tready
+  .m_axis_result_tdata(m_axis_result_tdata)    // output wire [15 : 0] m_axis_result_tdata
+);
 
     localparam ADDR_WIDTH = 27;
     localparam APP_DATA_WIDTH = 64;
@@ -138,7 +211,7 @@ module inference(
 
     logic                                  init_calib_complete;
     
-    logic[31:0]                            read_data_display;
+    logic[15:0]                            ram_data_out;
     
         mig_7series_0 u_mig_7series_0
     (
@@ -227,7 +300,7 @@ module inference(
  
     hex_driver hexB   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
-                      .in({read_data_display[15:12], read_data_display[11:8], read_data_display[7:4], read_data_display[3:0]}),
+                      .in({ram_data_out[15:12], ram_data_out[11:8], ram_data_out[7:4], ram_data_out[3:0]}),
                       .hex_seg(hex_segB),
                       .hex_grid(hex_gridB));
     
