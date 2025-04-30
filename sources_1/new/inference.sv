@@ -84,6 +84,11 @@ module inference(
     logic embedding_done;
     integer i;
     
+    logic accumulator_input_valid, accumulator_last, accumulator_output_valid, accumulator_last_valid;
+    logic [15:0] accumulator_data, accumulator_result;
+    logic multiply_input_valid, multiply_result_valid;
+    logic [15:0] multiply_a_data, multiply_b_data, multiply_result;
+    
     ascii_to_token (
         .input_ascii(input_ascii),
         .output_token(token)
@@ -162,23 +167,23 @@ module inference(
     );
     
     accumulator accumulator (
-  .aclk(aclk),                                  // input wire aclk
-  .s_axis_a_tvalid(s_axis_a_tvalid),            // input wire s_axis_a_tvalid
-  .s_axis_a_tdata(s_axis_a_tdata),              // input wire [15 : 0] s_axis_a_tdata
-  .s_axis_a_tlast(s_axis_a_tlast),              // input wire s_axis_a_tlast
-  .m_axis_result_tvalid(m_axis_result_tvalid),  // output wire m_axis_result_tvalid
-  .m_axis_result_tdata(m_axis_result_tdata),    // output wire [15 : 0] m_axis_result_tdata
-  .m_axis_result_tlast(m_axis_result_tlast)    // output wire m_axis_result_tlast
+  .aclk(clk),                                  
+  .s_axis_a_tvalid(accumulator_input_valid),            // input wire s_axis_a_tvalid
+  .s_axis_a_tdata(accumulator_data),              // input wire [15 : 0] s_axis_a_tdata
+  .s_axis_a_tlast(accumulator_last),              // input wire s_axis_a_tlast
+  .m_axis_result_tvalid(accumulator_output_valid),  // output wire m_axis_result_tvalid
+  .m_axis_result_tdata(accumulator_result),    // output wire [15 : 0] m_axis_result_tdata
+  .m_axis_result_tlast(accumulator_last_valid)    // output wire m_axis_result_tlast
     );
     
     multiply multiply (
-  .aclk(aclk),                                  // input wire aclk
-  .s_axis_a_tvalid(s_axis_a_tvalid),            // input wire s_axis_a_tvalid
-  .s_axis_a_tdata(s_axis_a_tdata),              // input wire [15 : 0] s_axis_a_tdata
-  .s_axis_b_tvalid(s_axis_b_tvalid),            // input wire s_axis_b_tvalid
-  .s_axis_b_tdata(s_axis_b_tdata),              // input wire [15 : 0] s_axis_b_tdata
-  .m_axis_result_tvalid(m_axis_result_tvalid),  // output wire m_axis_result_tvalid
-  .m_axis_result_tdata(m_axis_result_tdata)    // output wire [15 : 0] m_axis_result_tdata
+  .aclk(clk),                                 
+  .s_axis_a_tvalid(multiply_input_valid),            // input wire s_axis_a_tvalid
+  .s_axis_a_tdata(multiply_a_data),              // input wire [15 : 0] s_axis_a_tdata
+  .s_axis_b_tvalid(multiply_input_valid),            // input wire s_axis_b_tvalid
+  .s_axis_b_tdata(multiply_b_data),              // input wire [15 : 0] s_axis_b_tdata
+  .m_axis_result_tvalid(multiply_result_valid),  // output wire m_axis_result_tvalid
+  .m_axis_result_tdata(multiply_result)    // output wire [15 : 0] m_axis_result_tdata
 );
 
     localparam ADDR_WIDTH = 27;
