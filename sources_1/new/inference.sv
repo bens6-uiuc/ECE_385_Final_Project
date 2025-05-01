@@ -66,89 +66,96 @@ module inference(
     output logic ddr3_we_n,
     input logic reset
     );
-    
-    logic [7:0] generated_ascii;
-    logic [11:0] generate_count;
+  
     logic [6:0] token;
     
     logic [26:0] read_address;
     logic read_data_valid;
     logic [26:0] embedding_address;
-    logic [3:0] embedding_counter;
-    logic reset_hidden_layer; //NEED TO IMPLEMENT
-    
-    logic [15:0] hidden_layer[32];
-    logic [15:0] embedding_layer[16];
-    logic [15:0] logits[76];
-    logic [1:0] layer_count;
-    logic embedding_done;
-    integer i;
     
     logic accumulator_input_valid, accumulator_last, accumulator_output_valid, accumulator_last_valid;
     logic [15:0] accumulator_data, accumulator_result;
     logic multiply_input_valid, multiply_result_valid;
     logic [15:0] multiply_a_data, multiply_b_data, multiply_result; //Seperate valids to check both!
     
-    ascii_to_token (
-        .input_ascii(input_ascii),
-        .output_token(token)
-    );
+    //Internal signals
+    logic reset_inference;
+    logic [15:0] hidden_layer[32];
+    logic [15:0] embedding_layer[16];
+    logic [15:0] logits[76];
+    logic embedding_done;
+    integer i;
+    logic [3:0] embedding_counter;
+    logic [4:0] hidden_nueron_counter;
+    logic [1:0] layer_count;
     
-    always_ff @ (posedge clk) //Maybe make this based on the ram read valid signal???
+    //ascii_to_token (
+        //.input_ascii(input_ascii),
+        //.output_token(token)
+    //);
+    
+    assign token = 0;
+    
+    always_ff @ (posedge clk) 
     begin
-        if(execute)
+        if(reset)
             begin
-                if (!embedding_done) 
-                    begin
-                        if(read_data_valid) //New embedding value received 
-                        begin
-                            if (embedding_counter == 15)
-                            begin
-                                embedding_done <= 0;
-                            end
-                            embedding_layer[embedding_counter] <= ram_data_out;
-                            embedding_counter <= embedding_counter + 1;
-                        end
-                    end
-                else //Embedding layer done
-                    begin
-                        for(i = 0; i < 32; i++)
-                        begin
-                            
-                        
-                        end
-                    end
-            end
-        else // If next token is not being inferenced
-            begin
-                
-                if(reset_hidden_layer) //If first token has not been sent yet
-                begin
-                    embedding_counter <= 0;
-                    layer_count <= 0;
-                    embedding_done <= 0;
-                    for (i = 0; i < 16; i = i + 1) 
+                for(i = 0; i < 32; i++)
                     begin
                         hidden_layer[i] <= 0;
-                    end 
-                end
-                else //If waiting for next token
-                begin
-                    embedding_counter <= 0;
-                    layer_count <= 0;
-                    embedding_done <= 0;
-                    for (i = 0; i < 16; i = i + 1) 
+                    end
+                for(i = 0; i < 16; i++)
                     begin
-                        hidden_layer[i] <= hidden_layer[i];
-                    end 
-                end
+                        embedding_layer[i] <= 0; //CHANGE TO ZERO
+                    end
+                for(i = 0; i < 76; i++)
+                    begin
+                        logits[i] <= 0;
+                    end   
+                embedding_done <= 0;
+                embedding_counter <= 0;
+                layer_count <= 0;
+                hidden_nueron_counter <= 0;
             end
+            
+        if(execute)
+            begin
+                if(!embedding_done)
+                    begin
+                        if(read_data_valid)
+                            begin
+                                if(embedding_counter == 15)
+                                    begin
+                                        embedding_done <= 1;
+                                    end
+                                embedding_layer[embedding_counter] <= ram_data_out;
+                                embedding_counter <= embedding_counter + 1;      
+                            end
+                    end            
+            end
+            
+        //if(embedding_done)
+            //begin
+                //if(read_data_valid)
+                    //begin
+                        
+                    //end
+            //end    
+                    
     end
     
     always_comb //Pretty sure all addresses need to be combinational
         begin
-            embedding_address = (token * 16) + embedding_counter;
-            read_address = embedding_address;
+            if(!execute)
+                begin
+                    embedding_address = 1;
+                    read_address = 1;
+                end
+            else //read_data_valid might not be getting triggered properly, this attempts to resolve that
+                begin
+                    embedding_address = (token * 16) + embedding_counter;
+                    read_address = embedding_address;
+                end
         end
     
     ram_reader ram_reader_0(
@@ -291,6 +298,8 @@ module inference(
     assign app_en   = ram_init_done ? app_rd_en:app_wr_en;     //between write logic and read
     assign app_cmd  = ram_init_done ? app_rd_cmd:app_wr_cmd;   //logic
         
+    logic [3:0] embedding_index;
+    assign embedding_index = SW[3:0];    
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
@@ -300,7 +309,7 @@ module inference(
  
     hex_driver hexB   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
-                      .in({ram_data_out[15:12], ram_data_out[11:8], ram_data_out[7:4], ram_data_out[3:0]}),
+                      .in({embedding_layer[embedding_index][15:12], embedding_layer[embedding_index][11:8], embedding_layer[embedding_index][7:4], embedding_layer[embedding_index][3:0]}),
                       .hex_seg(hex_segB),
                       .hex_grid(hex_gridB));
     
