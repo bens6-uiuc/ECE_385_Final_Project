@@ -7,7 +7,7 @@ timeprecision 1ns;
 
 logic clk;
 logic [15:0] a_data, b_data, result_data;
-logic a_valid, b_valid, result_valid, a_ready, b_ready, result_ready;
+logic a_valid, b_valid, result_valid;
 
 
   multiply multiply (
@@ -34,16 +34,7 @@ initial begin: TEST_ASCII
     b_data = 0;
     result_data = 0;
     a_valid = 0;
-    a_ready = 0;
     b_valid = 0;
-    b_ready = 0;
-    result_valid = 0;
-    result_ready = 1;
-        
-    repeat (10) @(posedge clk);
-    
-    a_ready <= 1;
-    b_ready <= 1;
     
     repeat (10) @(posedge clk);
     a_data <= 'hb600;
@@ -54,7 +45,7 @@ initial begin: TEST_ASCII
     a_valid <= 1;
     b_valid <= 1;
 
-    repeat (100000) @(posedge clk);
+    repeat (100) @(posedge clk);
 
             
     $finish();

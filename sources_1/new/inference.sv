@@ -87,7 +87,7 @@ module inference(
     logic accumulator_input_valid, accumulator_last, accumulator_output_valid, accumulator_last_valid;
     logic [15:0] accumulator_data, accumulator_result;
     logic multiply_input_valid, multiply_result_valid;
-    logic [15:0] multiply_a_data, multiply_b_data, multiply_result;
+    logic [15:0] multiply_a_data, multiply_b_data, multiply_result; //Seperate valids to check both!
     
     ascii_to_token (
         .input_ascii(input_ascii),
