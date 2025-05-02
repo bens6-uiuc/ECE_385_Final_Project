@@ -66,28 +66,69 @@ module inference(
     output logic ddr3_we_n,
     input logic reset
     );
+    
+    localparam ADDR_WIDTH = 27;
+    localparam APP_DATA_WIDTH = 64;
+    localparam APP_MASK_WIDTH = 8;
+    
+    //internal signals
+    logic [ADDR_WIDTH-1:0]                 app_wr_addr, app_rd_addr, app_addr; //shared signals between writing and reading sides
+    logic [2:0]                            app_wr_cmd, app_rd_cmd, app_cmd;    //ram_init_done used to arbitrate between in this
+    logic                                  app_wr_en, app_rd_en, app_en;       //example. All writes from SDCard happen first.
+    logic                                  app_rdy;
+    logic [APP_DATA_WIDTH-1:0]             app_rd_data;
+    logic                                  app_rd_data_end;
+    logic                                  app_rd_data_valid;
+    logic [APP_DATA_WIDTH-1:0]             app_wdf_data;
+    logic                                  app_wdf_end;
+    logic [APP_MASK_WIDTH-1:0]             app_wdf_mask;
+    logic                                  app_wdf_rdy;
+    logic                                  app_sr_active;
+    logic                                  app_ref_ack;
+    logic                                  app_zq_ack;
+    logic                                  app_wdf_wren;
+    
+    logic                                  ui_clk, ui_sync_rst;
+
+    logic                                  init_calib_complete;
+    
+    logic[15:0]                            ram_data_out;
   
     logic [6:0] token;
     
     logic [26:0] read_address;
     logic read_data_valid;
-    logic [26:0] embedding_address;
     
     logic accumulator_input_valid, accumulator_last, accumulator_output_valid, accumulator_last_valid;
     logic [15:0] accumulator_data, accumulator_result;
     logic multiply_input_valid, multiply_result_valid;
-    logic [15:0] multiply_a_data, multiply_b_data, multiply_result; //Seperate valids to check both!
+    logic [15:0] multiply_a_data, multiply_b_data, multiply_result;
     
     //Internal signals
     logic reset_inference;
-    logic [15:0] hidden_layer[32];
-    logic [15:0] embedding_layer[16];
-    logic [15:0] logits[76];
+    logic [15:0] hidden_layer[LINEAR_SIZE];
+    logic [15:0] embedding_layer[EMBEDDING_SIZE];
+    logic [15:0] logits[VOCAB_SIZE];
     logic embedding_done;
+    logic weights_done;
+    logic get_weight;
+    logic multiply_weight;
+    logic load_hidden_state;
+    logic add_bias;
+    
+    
+    logic nueron_done;
     integer i;
     logic [3:0] embedding_counter;
     logic [4:0] hidden_nueron_counter;
     logic [1:0] layer_count;
+    
+    logic wait_accumulate;
+    
+    localparam VOCAB_SIZE = 76;
+    localparam EMBEDDING_SIZE = 16;
+    localparam LINEAR_SIZE = 32;
+    localparam LINEAR_LAYERS = 4;
     
     //ascii_to_token (
         //.input_ascii(input_ascii),
@@ -95,20 +136,20 @@ module inference(
     //);
     
     assign token = 0;
-    
+        
     always_ff @ (posedge clk) 
     begin
         if(reset)
             begin
-                for(i = 0; i < 32; i++)
+                for(i = 0; i < LINEAR_SIZE; i++)
                     begin
                         hidden_layer[i] <= 0;
                     end
-                for(i = 0; i < 16; i++)
+                for(i = 0; i < EMBEDDING_SIZE; i++)
                     begin
-                        embedding_layer[i] <= 0; //CHANGE TO ZERO
+                        embedding_layer[i] <= 0;
                     end
-                for(i = 0; i < 76; i++)
+                for(i = 0; i < VOCAB_SIZE; i++)
                     begin
                         logits[i] <= 0;
                     end   
@@ -116,6 +157,7 @@ module inference(
                 embedding_counter <= 0;
                 layer_count <= 0;
                 hidden_nueron_counter <= 0;
+                get_weight <= 0;
             end
             
         if(execute)
@@ -127,6 +169,7 @@ module inference(
                                 if(embedding_counter == 15)
                                     begin
                                         embedding_done <= 1;
+                                        get_weight <= 1;
                                     end
                                 embedding_layer[embedding_counter] <= ram_data_out;
                                 embedding_counter <= embedding_counter + 1;      
@@ -134,27 +177,62 @@ module inference(
                     end            
             end
             
-        //if(embedding_done)
-            //begin
-                //if(read_data_valid)
-                    //begin
+            
+        if(embedding_done) 
+            begin //Add waiting for multiply signal here?
+                if(read_data_valid && get_weight) //Get weights for each embedding for each nueron
+                    begin
+                        multiply_a_data <= ram_data_out; //Weight
+                        multiply_b_data <= embedding_layer[embedding_counter];
+                        multiply_input_valid <= 1;
+                        multiply_weight <= 1;
+                        get_weight <= 0;
+                    end
+                    
+                if(multiply_result_valid && multiply_weight)
+                    begin
+                        if(embedding_counter == 15)
+                            begin
+                                add_bias <= 1;
+                            end
+                        multiply_input_valid <= 0;
+                        accumulator_input_valid <= 1;
+                        accumulator_data <= multiply_result;
+                        multiply_weight <= 0;
                         
-                    //end
-            //end    
+                    end
+                    
+                if(read_data_valid && add_bias)
+                    begin
+                        accumulator_data <= ram_data_out; 
+                        
+                    end
+                    
+                if(accumulator_last_valid && load_hidden_state)
+                    begin
+                    
+                    end              
+            end  
                     
     end
     
-    always_comb //Pretty sure all addresses need to be combinational
+    always_comb //Pretty sure addresses need to be combinational
         begin
             if(!execute)
                 begin
-                    embedding_address = 1;
-                    read_address = 1;
+                    read_address = 0;
                 end
-            else //read_data_valid might not be getting triggered properly, this attempts to resolve that
+            else if(get_weight)//read_data_valid might not be getting triggered properly, this attempts to resolve that
                 begin
-                    embedding_address = (token * 16) + embedding_counter;
-                    read_address = embedding_address;
+                    read_address = (token * EMBEDDING_SIZE) + embedding_counter;
+                end
+            else if(add_bias)
+                begin
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_nueron_counter * LINEAR_SIZE) + embedding_counter;
+                end
+            else if(load_hidden_state)
+                begin
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (LINEAR_SIZE * EMBEDDING_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + hidden_nueron_counter;
                 end
         end
     
@@ -192,33 +270,6 @@ module inference(
   .m_axis_result_tvalid(multiply_result_valid),  // output wire m_axis_result_tvalid
   .m_axis_result_tdata(multiply_result)    // output wire [15 : 0] m_axis_result_tdata
 );
-
-    localparam ADDR_WIDTH = 27;
-    localparam APP_DATA_WIDTH = 64;
-    localparam APP_MASK_WIDTH = 8;
-    
-    //internal signals
-    logic [ADDR_WIDTH-1:0]                 app_wr_addr, app_rd_addr, app_addr; //shared signals between writing and reading sides
-    logic [2:0]                            app_wr_cmd, app_rd_cmd, app_cmd;    //ram_init_done used to arbitrate between in this
-    logic                                  app_wr_en, app_rd_en, app_en;       //example. All writes from SDCard happen first.
-    logic                                  app_rdy;
-    logic [APP_DATA_WIDTH-1:0]             app_rd_data;
-    logic                                  app_rd_data_end;
-    logic                                  app_rd_data_valid;
-    logic [APP_DATA_WIDTH-1:0]             app_wdf_data;
-    logic                                  app_wdf_end;
-    logic [APP_MASK_WIDTH-1:0]             app_wdf_mask;
-    logic                                  app_wdf_rdy;
-    logic                                  app_sr_active;
-    logic                                  app_ref_ack;
-    logic                                  app_zq_ack;
-    logic                                  app_wdf_wren;
-    
-    logic                                  ui_clk, ui_sync_rst;
-
-    logic                                  init_calib_complete;
-    
-    logic[15:0]                            ram_data_out;
     
         mig_7series_0 u_mig_7series_0
     (
@@ -298,8 +349,8 @@ module inference(
     assign app_en   = ram_init_done ? app_rd_en:app_wr_en;     //between write logic and read
     assign app_cmd  = ram_init_done ? app_rd_cmd:app_wr_cmd;   //logic
         
-    logic [3:0] embedding_index;
-    assign embedding_index = SW[3:0];    
+    logic [4:0] index;
+    assign index = SW[4:0];    
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
@@ -309,7 +360,7 @@ module inference(
  
     hex_driver hexB   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
-                      .in({embedding_layer[embedding_index][15:12], embedding_layer[embedding_index][11:8], embedding_layer[embedding_index][7:4], embedding_layer[embedding_index][3:0]}),
+                      .in({hidden_layer[index][15:12], hidden_layer[index][11:8], hidden_layer[index][7:4], hidden_layer[index][3:0]}),
                       .hex_seg(hex_segB),
                       .hex_grid(hex_gridB));
     

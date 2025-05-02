@@ -48,7 +48,7 @@ initial begin: TEST_ASCII
     
     repeat (30) @(posedge clk);
     
-    accumulator_data = 'h0800;
+    accumulator_data = 'h3c00;
     accumulator_input_valid = 1;   
     
     
@@ -58,7 +58,7 @@ initial begin: TEST_ASCII
     
     repeat (2) @(posedge clk);
           
-    accumulator_data = 'h0c00;
+    accumulator_data = 'h4000;
     accumulator_input_valid = 1;      
     
     repeat (1) @(posedge clk);
@@ -67,7 +67,7 @@ initial begin: TEST_ASCII
 
     repeat (2) @(posedge clk);
           
-    accumulator_data = 'h1000;
+    accumulator_data = 'h4200;
     accumulator_input_valid = 1;  
     accumulator_last = 1;    
     
