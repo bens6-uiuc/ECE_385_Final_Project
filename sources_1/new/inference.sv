@@ -114,29 +114,29 @@ module inference(
 
     logic get_weight_hidden_to_hidden;
     logic get_bias_hidden_to_hidden;
-    logic get_weight_hidden_to_input;
-    logic get_bias_hidden_to_input;
+    logic get_weight_input_to_hidden;
+    logic get_bias_input_to_hidden;
     
     logic multiply_hidden_to_hidden_weight;
     logic multiply_input_to_hidden_weight;
     
-    logic add_bias_hidden_to_hidden;
-    logic add_bias_input_to_hidden;
-    
-    logic load_hidden_state;
-    logic add_bias;
-    logic accumulator_loaded;
+    logic get_weight_linear_layer;
+    logic get_bias_linear_layer;
+     
+    logic neuron_done;
+    logic accumulator_loaded; //Track when accumulator has all the values it needs and should compute sum
     logic hidden_done;
     logic done;
     
     integer i;
     logic [3:0] embedding_counter;
-    logic [4:0] hidden_counter; //Keep track of what hidden layer we need weights for
-    logic [4:0] hidden_neuron_counter; //Keep track of what hidden layer is being computed
+    logic [4:0] hidden_counter; //Keep track of what hidden neuron is being computed
+    logic [4:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
+    logic [6:0] logit_counter; //Keep track of what logic is being computed
         
     localparam VOCAB_SIZE = 76;
-    localparam EMBEDDING_SIZE = 16;
-    localparam LINEAR_SIZE = 32;
+    localparam EMBEDDING_SIZE = 4;
+    localparam LINEAR_SIZE = 8;
     
     //ascii_to_token (
         //.input_ascii(input_ascii),
@@ -168,18 +168,17 @@ module inference(
                 hidden_neuron_counter <= 0;
                 get_weight_hidden_to_hidden <= 0;
                 get_bias_hidden_to_hidden <= 0;
-                get_weight_hidden_to_input <= 0;
-                get_bias_hidden_to_input <= 0;
+                get_weight_input_to_hidden <= 0;
+                get_bias_input_to_hidden <= 0;
                 multiply_hidden_to_hidden_weight <= 0;
                 multiply_input_to_hidden_weight <= 0;
-                add_bias_hidden_to_hidden <= 0;
-                add_bias_input_to_hidden <= 0;
+                neuron_done <= 0;
                 accumulator_loaded <= 0;
                 multiply_input_valid <= 0;
                 done <= 0;
             end
             
-        if(execute)
+        if(execute) //Load embedding layer and reset inference counters
             begin
                 if(!embedding_done)
                     begin
@@ -192,21 +191,26 @@ module inference(
                                         
                                     end
                                 embedding_layer[embedding_counter] <= ram_data_out;
-                                embedding_counter <= embedding_counter + 1;      
+                                embedding_counter <= embedding_counter + 1;   
+                                hidden_counter <= 0; 
+                                hidden_neuron_counter <= 0; 
+                                logit_counter <= 0; 
+                                 
                             end
                     end            
             end
              
-        if(embedding_done) 
+        if(embedding_done) //Inference next hidden state of RNN
             begin
                            
                 if(accumulator_loaded || multiply_input_valid) //Accumulator input valid must be dropped after exactly one clock cycle
                     begin
                         accumulator_input_valid <= 0;   
                         multiply_input_valid <= 0;
+                        accumulator_loaded <= 0;
                     end
                 
-                if(read_data_valid && get_weight_hidden_to_hidden) //Get weights for each prev hidden going
+                if(read_data_valid && get_weight_hidden_to_hidden) //Get weights and multiply by each prev hidden 
                     begin
                         multiply_a_data <= ram_data_out; //Weight
                         multiply_b_data <= old_hidden_layer[hidden_counter];
@@ -217,45 +221,61 @@ module inference(
                     
                 if(multiply_result_valid && multiply_hidden_to_hidden_weight)
                     begin
-                        if(hidden_counter == (LINEAR_SIZE-1))
-                            begin
-                                add_bias <= 1;
-                            end
-                        multiply_input_valid <= 0;
-                        accumulator_input_valid <= 1;
-                        accumulator_data <= multiply_result;
-                        accumulator_loaded <= 0;
-                        multiply_weight <= 0;
-                        embedding_counter <= embedding_counter + 1;
-                    end   
-                    
-                if(read_data_valid && add_bias)
-                    begin
-                        accumulator_data <= ram_data_out; 
-                        accumulator_loaded <= 0;
-                        load_hidden_state <= 1;
-                    end
-                    
-                if(accumulator_last_valid && load_hidden_state)
-                    begin
                         if(hidden_neuron_counter == (LINEAR_SIZE-1))
                             begin
-                                hidden_done <= 1; 
-                                embedding_done <= 0;   
+                                get_bias_hidden_to_hidden <= 1;
                             end
-                        if(accumulator_result[15] == 1) //Check if result is negative (RELU)
+                        else 
                             begin
-                                hidden_layer[hidden_neuron_counter] <= 0;
+                                get_weight_hidden_to_hidden <= 1; //If haven't gotten all prev hidden weights get next
                             end
-                        else
+                        accumulator_input_valid <= 1;
+                        accumulator_data <= multiply_result;
+                        multiply_hidden_to_hidden_weight <= 0;
+                        hidden_neuron_counter <= hidden_neuron_counter + 1; //Get weight for next prev hidden neuron 
+                    end   
+                    
+                if(read_data_valid && get_bias_hidden_to_hidden)
+                    begin
+                        accumulator_data <= ram_data_out; 
+                        get_weight_input_to_hidden <= 1; 
+                    end
+                    
+                if(get_weight_input_to_hidden)  
+                    begin
+                        multiply_a_data <= ram_data_out; //Weight
+                        multiply_b_data <= embedding_layer[embedding_counter];
+                        multiply_input_valid <= 1;
+                        multiply_input_to_hidden_weight <= 1;
+                        get_weight_hidden_to_hidden <= 0;
+                    end  
+                    
+                if(multiply_result_valid && multiply_input_to_hidden_weight)
+                    begin
+                        if(embedding_counter == (EMBEDDING_SIZE-1))
                             begin
-                                hidden_layer[hidden_neuron_counter] <= accumulator_result;
+                                get_bias_input_to_hidden <= 1;
                             end
-                        hidden_neuron_counter <= hidden_neuron_counter + 1;
-                    end              
+                        else 
+                            begin
+                                get_weight_input_to_hidden <= 1; //If haven't gotten all input weights get next
+                            end
+                        accumulator_input_valid <= 1;
+                        accumulator_data <= multiply_result;
+                        multiply_hidden_to_hidden_weight <= 0;
+                    end                    
+                    
+                if(get_bias_input_to_hidden)
+                    begin
+                        accumulator_data <= ram_data_out; 
+                        neuron_done <= 1;   
+                    end
+              
+                
+              
             end  
             
-        if(hidden_done)
+        if(hidden_done) // inference linear layer
             begin
             
             end
@@ -272,26 +292,34 @@ module inference(
     
     always_comb //Pretty sure addresses need to be combinational
         begin
-            if(!execute)
-                begin
-                    read_address = 0;
-                end
-            else if(get_weight_hidden_to_hidden)
+            if(execute)
                 begin
                     read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                 end
+            else if(get_weight_hidden_to_hidden)
+                begin
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter);
+                end
             else if(get_bias_hidden_to_hidden)
                 begin
-                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_neuron_counter * LINEAR_SIZE) + embedding_counter;
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter;
                 end
-            else if(get_weight_hidden_to_input)
+            else if(get_weight_input_to_hidden)
                 begin
-                    read_address = 1;
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter); //DONE
                 end
-            else if(get_bias_hidden_to_input)
+            else if(get_bias_input_to_hidden)
                 begin
-                    read_address = 1;
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter);
                 end
+            else if(get_weight_linear_layer)
+                begin
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * 2) + (logit_counter * 8) + hidden_neuron_counter;
+                end    
+            else if(get_bias_linear_layer)
+                begin
+                    read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * 2) + (VOCAB_SIZE * LINEAR_SIZE) + logit_counter;
+                end    
             else
                 begin
                     read_address = 0;
@@ -422,7 +450,7 @@ module inference(
  
     hex_driver hexB   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
-                      .in({hidden_layer[index][15:12], hidden_layer[index][11:8], hidden_layer[index][7:4], hidden_layer[index][3:0]}),
+                      .in({new_hidden_layer[index][15:12], new_hidden_layer[index][11:8], new_hidden_layer[index][7:4], new_hidden_layer[index][3:0]}),
                       .hex_seg(hex_segB),
                       .hex_grid(hex_gridB));
     
