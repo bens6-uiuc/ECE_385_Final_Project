@@ -52,7 +52,7 @@ initial begin: TEST_ASCII
     accumulator_input_valid = 1;   
     
     
-    repeat (1) @(posedge clk);
+    repeat (2) @(posedge clk);
     
     accumulator_input_valid = 0;
     
@@ -82,7 +82,7 @@ initial begin: TEST_ASCII
 
     @(posedge accumulator_output_valid);
     
-    repeat (100) @(posedge clk);
+    repeat (20) @(posedge clk);
     
     $finish();
 end  
