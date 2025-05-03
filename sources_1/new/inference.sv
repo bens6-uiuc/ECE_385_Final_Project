@@ -99,7 +99,7 @@ module inference(
     logic [26:0] read_address;
     logic read_data_valid;
     
-    logic accumulator_input_valid, accumulator_last, accumulator_output_valid, accumulator_last_valid;
+    logic accumulator_input_valid, accumulator_last, accumulator_last_valid;
     logic [15:0] accumulator_data, accumulator_result;
     logic multiply_input_valid, multiply_result_valid;
     logic [15:0] multiply_a_data, multiply_b_data, multiply_result;
@@ -202,13 +202,20 @@ module inference(
              
         if(embedding_done) //Inference next hidden state of RNN
             begin
+            
+                if(accumulator_last)
+                    begin
+                        accumulator_input_valid <= 0;
+                        neuron_done <= 1;
+                    end
                            
                 if(accumulator_loaded || multiply_input_valid) //Accumulator input valid must be dropped after exactly one clock cycle
                     begin
-                        accumulator_input_valid <= 0;   
+                        accumulator_last <= 1;   
                         multiply_input_valid <= 0;
                         accumulator_loaded <= 0;
                     end
+                        
                 
                 if(read_data_valid && get_weight_hidden_to_hidden) //Get weights and multiply by each prev hidden 
                     begin
@@ -268,11 +275,21 @@ module inference(
                 if(get_bias_input_to_hidden)
                     begin
                         accumulator_data <= ram_data_out; 
-                        neuron_done <= 1;   
+                        accumulator_loaded <= 1;   
                     end
               
-                
-              
+                if(accumulator_last_valid && neuron_done)
+                    begin
+                        if(hidden_counter == (LINEAR_SIZE -1))
+                            begin
+                                hidden_done <= 1;
+                            end
+                        else 
+                            begin
+                                hidden_counter <= hidden_counter + 1;
+                            end
+                        new_hidden_layer[hidden_counter] <= accumulator_result;
+                    end
             end  
             
         if(hidden_done) // inference linear layer
@@ -346,7 +363,6 @@ module inference(
   .s_axis_a_tvalid(accumulator_input_valid),            // input wire s_axis_a_tvalid
   .s_axis_a_tdata(accumulator_data),              // input wire [15 : 0] s_axis_a_tdata
   .s_axis_a_tlast(accumulator_last),              // input wire s_axis_a_tlast
-  .m_axis_result_tvalid(accumulator_output_valid),  // output wire m_axis_result_tvalid
   .m_axis_result_tdata(accumulator_result),    // output wire [15 : 0] m_axis_result_tdata
   .m_axis_result_tlast(accumulator_last_valid)    // output wire m_axis_result_tlast
     );
