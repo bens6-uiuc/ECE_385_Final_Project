@@ -156,6 +156,7 @@ module inference(
                 accumulator_loaded <= 0;
                 multiply_input_valid <= 0;
                 done <= 0;
+                accumulator_last <= 0;
             end
             
         if(execute) //Load embedding layer and reset inference counters
@@ -188,12 +189,16 @@ module inference(
                         accumulator_input_valid <= 0;
                         neuron_done <= 1;
                     end
-                           
-                if(accumulator_loaded || multiply_input_valid) //Accumulator input valid must be dropped after exactly one clock cycle
+                    
+                if(accumulator_loaded)
                     begin
-                        accumulator_last <= 1;   
-                        multiply_input_valid <= 0;
+                        accumulator_last <= 1;
                         accumulator_loaded <= 0;
+                    end
+                           
+                if(multiply_input_valid)
+                    begin       
+                        multiply_input_valid <= 0;
                     end
                         
                 
@@ -226,6 +231,7 @@ module inference(
                     begin
                         accumulator_data <= ram_data_out; 
                         get_weight_input_to_hidden <= 1; 
+                        get_bias_hidden_to_hidden <= 0;
                     end
                     
                 if(get_weight_input_to_hidden)  
@@ -235,6 +241,7 @@ module inference(
                         multiply_input_valid <= 1;
                         multiply_input_to_hidden_weight <= 1;
                         get_weight_hidden_to_hidden <= 0;
+                        get_weight_input_to_hidden <= 0;
                     end  
                     
                 if(multiply_result_valid && multiply_input_to_hidden_weight)
@@ -246,19 +253,22 @@ module inference(
                         else 
                             begin
                                 get_weight_input_to_hidden <= 1; //If haven't gotten all input weights get next
+                                embedding_counter <= embedding_counter + 1;
                             end
                         accumulator_input_valid <= 1;
                         accumulator_data <= multiply_result;
                         multiply_hidden_to_hidden_weight <= 0;
+                        multiply_input_to_hidden_weight <= 0;
                     end                    
                     
                 if(get_bias_input_to_hidden)
                     begin
                         accumulator_data <= ram_data_out; 
-                        accumulator_loaded <= 1;   
+                        accumulator_loaded <= 1; 
+                        get_bias_input_to_hidden <= 0;  
                     end
               
-                if(accumulator_last_valid && neuron_done)
+                if(accumulator_last_valid && neuron_done) //RELU
                     begin
                         if(hidden_counter == (LINEAR_SIZE -1))
                             begin
@@ -269,6 +279,7 @@ module inference(
                                 hidden_counter <= hidden_counter + 1;
                             end
                         new_hidden_layer[hidden_counter] <= accumulator_result;
+                        neuron_done <= 0;
                     end
             end  
             
@@ -277,7 +288,8 @@ module inference(
                 for(i = 0; i < LINEAR_SIZE; i++)
                     begin
                         old_hidden_layer[i] <= new_hidden_layer[i];
-                    end            
+                    end    
+                hidden_done <= 0;        
             end
             
         if(done)
@@ -441,7 +453,11 @@ module inference(
     logic [4:0] index;
     assign index = SW[4:0];    
     
-    assign LED = SW;
+    assign LED[15] = hidden_done;
+    assign LED[14] = multiply_input_valid;
+    assign LED[13] = accumulator_last;
+    assign LED[12] = embedding_done;
+    assign LED[11] = read_data_valid;
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
