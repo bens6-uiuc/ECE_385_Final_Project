@@ -188,6 +188,7 @@ module inference(
                     begin
                         accumulator_input_valid <= 0;
                         neuron_done <= 1;
+                        accumulator_last <= 0;
                     end
                     
                 if(accumulator_loaded)
@@ -268,7 +269,7 @@ module inference(
                         get_bias_input_to_hidden <= 0;  
                     end
               
-                if(accumulator_last_valid && neuron_done) //RELU
+                if(accumulator_last_valid && neuron_done)
                     begin
                         if(hidden_counter == (LINEAR_SIZE -1))
                             begin
@@ -278,7 +279,14 @@ module inference(
                             begin
                                 hidden_counter <= hidden_counter + 1;
                             end
-                        new_hidden_layer[hidden_counter] <= accumulator_result;
+                        if(accumulator_result[15] == 1)
+                            begin
+                                new_hidden_layer[hidden_counter] <= 0;
+                            end
+                        else 
+                            begin
+                                new_hidden_layer[hidden_counter] <= accumulator_result;
+                            end
                         neuron_done <= 0;
                     end
             end  
