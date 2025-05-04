@@ -32,20 +32,23 @@ initial begin: TEST_ASCII
 
     a_data = 0;
     b_data = 0;
-    result_data = 0;
     a_valid = 0;
     b_valid = 0;
     
     repeat (10) @(posedge clk);
-    a_data <= 'hb600;
-    b_data <= 'h7451;
-    
-    repeat (10) @(posedge clk);
-    
+    a_data <= 'h4000;
+    b_data <= 'h4000;
     a_valid <= 1;
     b_valid <= 1;
+    
+    @(posedge clk);
+    
+    a_valid <= 0;
+    b_valid <= 0;
 
-    repeat (100) @(posedge clk);
+    @(posedge result_valid);
+    
+    repeat (10) @(posedge clk);
 
             
     $finish();

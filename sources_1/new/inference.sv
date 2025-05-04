@@ -90,7 +90,6 @@ module inference(
     logic [15:0] old_hidden_layer[LINEAR_SIZE];
     logic [15:0] embedding_layer[EMBEDDING_SIZE];
     logic [15:0] logits[VOCAB_SIZE];
-    logic embedding_done;
 
     logic get_weight_hidden_to_hidden;
     logic get_bias_hidden_to_hidden;
@@ -103,15 +102,17 @@ module inference(
     logic get_weight_linear_layer;
     logic get_bias_linear_layer;
      
+    logic inference_hidden; 
+    logic load_embedding;
     logic neuron_done;
     logic accumulator_loaded; //Track when accumulator has all the values it needs and should compute sum
     logic hidden_done;
     logic done;
     
     integer i;
-    logic [3:0] embedding_counter;
-    logic [4:0] hidden_counter; //Keep track of what hidden neuron is being computed
-    logic [4:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
+    logic [1:0] embedding_counter;
+    logic [2:0] hidden_counter; //Keep track of what hidden neuron is being computed
+    logic [2:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
     logic [6:0] logit_counter; //Keep track of what logic is being computed
         
     localparam VOCAB_SIZE = 76;
@@ -142,7 +143,6 @@ module inference(
                     begin
                         logits[i] <= 0;
                     end   
-                embedding_done <= 0;
                 embedding_counter <= 0;
                 hidden_counter <= 0;
                 hidden_neuron_counter <= 0;
@@ -157,31 +157,29 @@ module inference(
                 multiply_input_valid <= 0;
                 done <= 0;
                 accumulator_last <= 0;
+                load_embedding <= 1;
+                inference_hidden <= 0;
             end
             
-        if(execute) //Load embedding layer and reset inference counters
-            begin
-                if(!embedding_done)
-                    begin
-                        if(read_data_valid)
-                            begin
-                                if(embedding_counter == (EMBEDDING_SIZE-1))
-                                    begin
-                                        embedding_done <= 1;
-                                        get_weight_hidden_to_hidden <= 1;
-                                        
-                                    end
-                                embedding_layer[embedding_counter] <= ram_data_out;
-                                embedding_counter <= embedding_counter + 1;   
-                                hidden_counter <= 0; 
-                                hidden_neuron_counter <= 0; 
-                                logit_counter <= 0; 
-                                 
-                            end
-                    end            
-            end
+        if(execute && load_embedding) //Load embedding layer and reset inference counters
+                begin
+                    if(read_data_valid)
+                        begin
+                            if(embedding_counter == (EMBEDDING_SIZE-1))
+                                begin
+                                    inference_hidden <= 1;
+                                    get_weight_hidden_to_hidden <= 1;
+                                    load_embedding <= 0;
+                                end
+                            embedding_layer[embedding_counter] <= ram_data_out;
+                            embedding_counter <= embedding_counter + 1;   
+                            hidden_counter <= 0; 
+                            hidden_neuron_counter <= 0; 
+                            logit_counter <= 0;  
+                        end
+                end            
              
-        if(embedding_done) //Inference next hidden state of RNN
+        if(inference_hidden) //Inference next hidden state of RNN
             begin
             
                 if(accumulator_last)
@@ -206,7 +204,7 @@ module inference(
                 if(read_data_valid && get_weight_hidden_to_hidden) //Get weights and multiply by each prev hidden 
                     begin
                         multiply_a_data <= ram_data_out; //Weight
-                        multiply_b_data <= old_hidden_layer[hidden_counter];
+                        multiply_b_data <= old_hidden_layer[hidden_neuron_counter];
                         multiply_input_valid <= 1;
                         multiply_hidden_to_hidden_weight <= 1;
                         get_weight_hidden_to_hidden <= 0;
@@ -241,7 +239,6 @@ module inference(
                         multiply_b_data <= embedding_layer[embedding_counter];
                         multiply_input_valid <= 1;
                         multiply_input_to_hidden_weight <= 1;
-                        get_weight_hidden_to_hidden <= 0;
                         get_weight_input_to_hidden <= 0;
                     end  
                     
@@ -254,11 +251,11 @@ module inference(
                         else 
                             begin
                                 get_weight_input_to_hidden <= 1; //If haven't gotten all input weights get next
-                                embedding_counter <= embedding_counter + 1;
+                                
                             end
+                        embedding_counter <= embedding_counter + 1;
                         accumulator_input_valid <= 1;
                         accumulator_data <= multiply_result;
-                        multiply_hidden_to_hidden_weight <= 0;
                         multiply_input_to_hidden_weight <= 0;
                     end                    
                     
@@ -274,10 +271,7 @@ module inference(
                         if(hidden_counter == (LINEAR_SIZE -1))
                             begin
                                 hidden_done <= 1;
-                            end
-                        else 
-                            begin
-                                hidden_counter <= hidden_counter + 1;
+                                inference_hidden <= 0;
                             end
                         if(accumulator_result[15] == 1)
                             begin
@@ -288,6 +282,7 @@ module inference(
                                 new_hidden_layer[hidden_counter] <= accumulator_result;
                             end
                         neuron_done <= 0;
+                        hidden_counter <= hidden_counter + 1;
                     end
             end  
             
@@ -464,8 +459,13 @@ module inference(
     assign LED[15] = hidden_done;
     assign LED[14] = multiply_input_valid;
     assign LED[13] = accumulator_last;
-    assign LED[12] = embedding_done;
-    assign LED[11] = read_data_valid;
+    assign LED[12] = inference_hidden;
+    assign LED[11] = load_embedding;
+    assign LED[10] = read_data_valid;
+    assign LED[9] =  get_weight_hidden_to_hidden;
+    assign LED[8] = get_bias_hidden_to_hidden;
+    assign LED[7] = get_weight_input_to_hidden;
+    assign LED[6] = get_bias_input_to_hidden;
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
