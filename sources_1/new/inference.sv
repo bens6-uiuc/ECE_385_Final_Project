@@ -176,6 +176,10 @@ module inference(
                             hidden_counter <= 0; 
                             hidden_neuron_counter <= 0; 
                             logit_counter <= 0;  
+                            if(embedding_counter == (EMBEDDING_SIZE-1))
+                                begin
+                                    embedding_counter <= 0;
+                                end                                 
                         end
                 end            
              
@@ -224,6 +228,10 @@ module inference(
                         accumulator_data <= multiply_result;
                         multiply_hidden_to_hidden_weight <= 0;
                         hidden_neuron_counter <= hidden_neuron_counter + 1; //Get weight for next prev hidden neuron 
+                        if(hidden_neuron_counter == (LINEAR_SIZE-1))
+                            begin
+                                hidden_neuron_counter <= 0;
+                            end
                     end   
                     
                 if(read_data_valid && get_bias_hidden_to_hidden)
@@ -257,6 +265,10 @@ module inference(
                         accumulator_input_valid <= 1;
                         accumulator_data <= multiply_result;
                         multiply_input_to_hidden_weight <= 0;
+                        if(embedding_counter == (EMBEDDING_SIZE-1))
+                            begin
+                                embedding_counter <= 0;
+                            end
                     end                    
                     
                 if(get_bias_input_to_hidden)
@@ -283,6 +295,10 @@ module inference(
                             end
                         neuron_done <= 0;
                         hidden_counter <= hidden_counter + 1;
+                        if(hidden_counter == (LINEAR_SIZE -1))
+                            begin
+                                hidden_counter <= 0;
+                            end
                     end
             end  
             
