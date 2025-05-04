@@ -1,24 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 04/27/2025 07:17:00 PM
-// Design Name: 
-// Module Name: inference
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module inference(
     input logic clk,
@@ -294,7 +274,10 @@ module inference(
             
         if(hidden_done) // inference linear layer
             begin
-            
+                for(i = 0; i < LINEAR_SIZE; i++)
+                    begin
+                        old_hidden_layer[i] <= new_hidden_layer[i];
+                    end            
             end
             
         if(done)
@@ -457,6 +440,8 @@ module inference(
         
     logic [4:0] index;
     assign index = SW[4:0];    
+    
+    assign LED = SW;
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
