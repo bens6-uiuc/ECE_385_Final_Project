@@ -206,7 +206,7 @@ module inference(
                         multiply_input_valid <= 0;
                     end
                         
-                if(accumulator_data != 0)
+                if(accumulator_data != 0) //Prevent values from being added more than once?? Might need fix
                     begin
                         accumulator_data <= 0;
                     end
@@ -225,6 +225,7 @@ module inference(
                         if(hidden_neuron_counter == (LINEAR_SIZE-1))
                             begin
                                 get_bias_hidden_to_hidden <= 1;
+                                get_weight_hidden_to_hidden <= 0;
                             end
                         else 
                             begin
@@ -261,6 +262,7 @@ module inference(
                         if(embedding_counter == (EMBEDDING_SIZE-1))
                             begin
                                 get_bias_input_to_hidden <= 1;
+                                get_weight_input_to_hidden <= 0;
                             end
                         else 
                             begin
