@@ -248,7 +248,7 @@ module inference(
                         get_bias_hidden_to_hidden <= 0;
                     end
                     
-                if(get_weight_input_to_hidden)  
+                if(read_data_valid && get_weight_input_to_hidden)  
                     begin
                         multiply_a_data <= ram_data_out; //Weight
                         multiply_b_data <= embedding_layer[embedding_counter];
@@ -266,8 +266,7 @@ module inference(
                             end
                         else 
                             begin
-                                get_weight_input_to_hidden <= 1; //If haven't gotten all input weights get next
-                                
+                                get_weight_input_to_hidden <= 1; //If haven't gotten all input weights get next   
                             end
                         embedding_counter <= embedding_counter + 1;
                         accumulator_input_valid <= 1;
@@ -279,7 +278,7 @@ module inference(
                             end
                     end                    
                     
-                if(get_bias_input_to_hidden)
+                if(read_data_valid && get_bias_input_to_hidden)
                     begin
                         accumulator_data <= ram_data_out; 
                         accumulator_loaded <= 1; 
@@ -292,6 +291,7 @@ module inference(
                             begin
                                 hidden_done <= 1;
                                 inference_hidden <= 0;
+                                get_weight_hidden_to_hidden <= 0;
                             end
                         //if(accumulator_result[15] == 1)
                            // begin
