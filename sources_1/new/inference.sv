@@ -177,7 +177,11 @@ module inference(
                             embedding_counter <= embedding_counter + 1;   
                             hidden_counter <= 0; 
                             hidden_neuron_counter <= 0; 
-                            logit_counter <= 0;                                 
+                            logit_counter <= 0;  
+                            if(embedding_counter > (EMBEDDING_SIZE-1))
+                                begin
+                                    embedding_counter <= 0;
+                                end                                        
                         end
                 end            
              
@@ -195,6 +199,7 @@ module inference(
                     begin
                         accumulator_last <= 1;
                         accumulator_loaded <= 0;
+                        accumulator_data <= 0;
                     end
                            
                 if(multiply_input_valid)
@@ -202,8 +207,9 @@ module inference(
                         multiply_input_valid <= 0;
                     end
                         
-                if(accumulator_data != 0) //Prevent values from being added more than once?? Might need fix
+                if(accumulator_input_valid)
                     begin
+                        accumulator_input_valid <= 0;
                         accumulator_data <= 0;
                     end
                 
@@ -230,7 +236,14 @@ module inference(
                         accumulator_input_valid <= 1;
                         accumulator_data <= multiply_result;
                         multiply_hidden_to_hidden_weight <= 0;
-                        hidden_neuron_counter <= hidden_neuron_counter + 1; //Get weight for next prev hidden neuron 
+                       if(hidden_neuron_counter == (LINEAR_SIZE-1))
+                            begin
+                                hidden_neuron_counter <= 0;
+                            end
+                        else
+                            begin
+                                hidden_neuron_counter <= hidden_neuron_counter + 1; //Get weight for next prev hidden neuron 
+                            end
                     end   
                     
                 if(read_data_valid && get_bias_hidden_to_hidden)
@@ -260,10 +273,18 @@ module inference(
                             begin
                                 get_weight_input_to_hidden <= 1; //If haven't gotten all input weights get next   
                             end
-                        embedding_counter <= embedding_counter + 1;
+                        
                         accumulator_input_valid <= 1;
                         accumulator_data <= multiply_result;
                         multiply_input_to_hidden_weight <= 0;
+                        if(embedding_counter == (EMBEDDING_SIZE-1))
+                            begin
+                                embedding_counter <= 0;
+                            end
+                        else
+                            begin
+                                embedding_counter <= embedding_counter + 1;
+                            end
                     end                    
                     
                 if(read_data_valid && get_bias_input_to_hidden)
@@ -291,8 +312,16 @@ module inference(
                            // end
                         new_hidden_layer[hidden_counter] <= accumulator_result;
                         neuron_done <= 0;
-                        hidden_counter <= hidden_counter + 1;
+                        
                         get_weight_hidden_to_hidden <= 1;
+                        if(hidden_counter == (LINEAR_SIZE -1))
+                            begin
+                                hidden_counter <= 0;
+                            end
+                        else
+                            begin
+                                hidden_counter <= hidden_counter + 1;
+                            end
                     end
             end  
             
