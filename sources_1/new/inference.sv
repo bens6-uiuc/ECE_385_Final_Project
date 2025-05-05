@@ -178,7 +178,7 @@ module inference(
                             hidden_counter <= 0; 
                             hidden_neuron_counter <= 0; 
                             logit_counter <= 0;  
-                            if(embedding_counter > (EMBEDDING_SIZE-1))
+                            if(embedding_counter == (EMBEDDING_SIZE-1))
                                 begin
                                     embedding_counter <= 0;
                                 end                                        
@@ -249,6 +249,7 @@ module inference(
                 if(read_data_valid && get_bias_hidden_to_hidden)
                     begin
                         accumulator_data <= ram_data_out; 
+                        accumulator_input_valid <= 1;
                         get_weight_input_to_hidden <= 1; 
                         get_bias_hidden_to_hidden <= 0;
                     end
@@ -290,6 +291,7 @@ module inference(
                 if(read_data_valid && get_bias_input_to_hidden)
                     begin
                         accumulator_data <= ram_data_out; 
+                        accumulator_input_valid <= 1;
                         accumulator_loaded <= 1; 
                         get_bias_input_to_hidden <= 0;  
                     end
