@@ -82,7 +82,30 @@ initial begin: TEST_ASCII
 
     @(posedge accumulator_output_valid);
     
-    repeat (20) @(posedge clk);
+    accumulator_data = 'h3c00;
+    accumulator_input_valid = 1;
+    
+    @(posedge clk)
+    
+    accumulator_input_valid = 0;
+    
+    accumulator_data = 'h4000;
+    accumulator_input_valid = 1;
+    
+    @(posedge clk)
+    
+    accumulator_input_valid = 0;
+    
+    accumulator_data = 'h4200;
+    accumulator_input_valid = 1;
+    
+    @(posedge clk)
+    
+    accumulator_last = 1;
+    accumulator_data = 'h4200;
+    
+    @(posedge clk)
+    
     
     $finish();
 end  

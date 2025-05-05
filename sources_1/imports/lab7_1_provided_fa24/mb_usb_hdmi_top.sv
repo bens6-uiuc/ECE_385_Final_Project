@@ -92,7 +92,7 @@ module final_project(
     inference inference_0(
         .clk(clk_ref_i),
         .input_ascii(input_ascii),
-        .execute(execute),
+        //.execute(execute),
         
         .generated_ascii(generated_ascii),
         .generate_count(generate_count),

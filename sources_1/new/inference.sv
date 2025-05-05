@@ -3,7 +3,7 @@
 module inference(
     input logic clk,
     input logic [7:0] input_ascii,
-    input logic execute,
+    //input logic execute,
     
     output logic [7:0] generated_ascii,
     output logic [11:0] generate_count,
@@ -125,6 +125,8 @@ module inference(
     //);
     
     assign token = 0;
+    
+    assign execute = SW[15];
         
     always_ff @ (posedge clk) 
     begin
@@ -176,7 +178,7 @@ module inference(
                             hidden_counter <= 0; 
                             hidden_neuron_counter <= 0; 
                             logit_counter <= 0;  
-                            if(embedding_counter == (EMBEDDING_SIZE-1))
+                            if(embedding_counter > (EMBEDDING_SIZE-1))
                                 begin
                                     embedding_counter <= 0;
                                 end                                 
@@ -204,6 +206,10 @@ module inference(
                         multiply_input_valid <= 0;
                     end
                         
+                if(accumulator_data != 0)
+                    begin
+                        accumulator_data <= 0;
+                    end
                 
                 if(read_data_valid && get_weight_hidden_to_hidden) //Get weights and multiply by each prev hidden 
                     begin
@@ -285,16 +291,18 @@ module inference(
                                 hidden_done <= 1;
                                 inference_hidden <= 0;
                             end
-                        if(accumulator_result[15] == 1)
-                            begin
-                                new_hidden_layer[hidden_counter] <= 0;
-                            end
-                        else 
-                            begin
-                                new_hidden_layer[hidden_counter] <= accumulator_result;
-                            end
+                        //if(accumulator_result[15] == 1)
+                           // begin
+                               // new_hidden_layer[hidden_counter] <= 0;
+                           // end
+                       // else 
+                           // begin
+                               // new_hidden_layer[hidden_counter] <= accumulator_result;
+                           // end
+                        new_hidden_layer[hidden_counter] <= accumulator_result;
                         neuron_done <= 0;
                         hidden_counter <= hidden_counter + 1;
+                        get_weight_hidden_to_hidden <= 1;
                         if(hidden_counter == (LINEAR_SIZE -1))
                             begin
                                 hidden_counter <= 0;
@@ -307,8 +315,7 @@ module inference(
                 for(i = 0; i < LINEAR_SIZE; i++)
                     begin
                         old_hidden_layer[i] <= new_hidden_layer[i];
-                    end    
-                hidden_done <= 0;        
+                    end         
             end
             
         if(done)
@@ -323,7 +330,7 @@ module inference(
     
     always_comb //Pretty sure addresses need to be combinational
         begin
-            if(execute)
+            if(load_embedding)
                 begin
                     read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                 end
@@ -482,6 +489,7 @@ module inference(
     assign LED[8] = get_bias_hidden_to_hidden;
     assign LED[7] = get_weight_input_to_hidden;
     assign LED[6] = get_bias_input_to_hidden;
+    assign LED[1:0] = embedding_counter;
     
     hex_driver hexA   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
@@ -491,7 +499,7 @@ module inference(
  
     hex_driver hexB   (.clk(ui_clk), 
                       .reset(ui_sync_rst),
-                      .in({new_hidden_layer[index][15:12], new_hidden_layer[index][11:8], new_hidden_layer[index][7:4], new_hidden_layer[index][3:0]}),
+                      .in({old_hidden_layer[index][15:12], old_hidden_layer[index][11:8], old_hidden_layer[index][7:4], old_hidden_layer[index][3:0]}),
                       .hex_seg(hex_segB),
                       .hex_grid(hex_gridB));
     
