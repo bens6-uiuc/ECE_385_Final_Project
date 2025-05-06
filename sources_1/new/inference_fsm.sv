@@ -6,14 +6,21 @@ module inference_fsm(
     input logic execute,
     input logic read_data_valid,
     input logic [15:0] SW,
-    input logic [6:0] token,
+    //input logic [6:0] token,
     input logic [15:0] ram_data_out,
     
     output logic [15:0] LED,
     output logic [6:0] output_token,
-    output logic [26:0] read_address
+    output logic [26:0] read_address,
+    
+    output logic [7:0] hex_segA,
+    output logic [3:0] hex_gridA,
+    output logic [7:0] hex_segB,
+    output logic [3:0] hex_gridB
 
     );
+    logic [6:0] token; //TEMP 
+    assign token = 1;
     
     typedef enum logic [2:0] {
         RESET,
@@ -35,7 +42,9 @@ module inference_fsm(
     logic [15:0] logits[VOCAB_SIZE];
 
     integer i;
-    logic [1:0] embedding_counter;
+    logic [5:0] embedding_counter;
+    logic [3:0] next_embedding_counter;
+    
     logic [2:0] hidden_counter; //Keep track of what hidden neuron is being computed
     logic [2:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
     logic [6:0] logit_counter; //Keep track of what logic is being computed
@@ -63,7 +72,7 @@ module inference_fsm(
                         logits[i] <= 0;     
                     end
                     
-                    embedding_counter <= 0;
+                    embedding_counter <= -1;
                     hidden_counter <= 0;
                     hidden_neuron_counter <= 0;
                     logit_counter <= 0;
@@ -72,20 +81,15 @@ module inference_fsm(
             else
                 begin
                     current_state <= next_state;
+                    embedding_counter <= next_embedding_counter;
                 end
             
             unique case(current_state)
                 IDLE:
                     begin
-                        embedding_counter <= -1;
                         hidden_counter <= 0;
                         hidden_neuron_counter <= 0;
                         logit_counter <= 0; 
-                    end
-                    
-                INCREMENT_EMBEDDING_LOAD:
-                    begin
-                        embedding_counter <= embedding_counter + 1;
                     end
                     
                 LOAD_EMBEDDING:
@@ -99,12 +103,12 @@ module inference_fsm(
     always_comb 
         begin
             next_state = current_state;
+            next_embedding_counter = embedding_counter;
+            read_address = 0;
             
             unique case(current_state)
                 RESET:
-                    begin 
-                        read_address = 0;
-                        
+                    begin                         
                         if(execute)
                             begin
                                 next_state = IDLE;
@@ -117,8 +121,6 @@ module inference_fsm(
                 
                 IDLE:
                     begin 
-                        read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-                    
                         if(execute)
                             begin
                                 next_state = INCREMENT_EMBEDDING_LOAD;
@@ -132,14 +134,14 @@ module inference_fsm(
                     
                 INCREMENT_EMBEDDING_LOAD:
                     begin
-                        read_address = (token * EMBEDDING_SIZE) + embedding_counter;
+                        next_embedding_counter = embedding_counter + 1;
                         next_state = SET_EMBEDDING_ADDRESS;
                     end
                     
                 SET_EMBEDDING_ADDRESS:
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-                    
+          
                         if(!read_data_valid)
                             begin
                                 next_state = GET_EMBEDDING;
@@ -170,7 +172,8 @@ module inference_fsm(
                     
                         if(embedding_counter == (EMBEDDING_SIZE - 1))
                             begin
-                                next_state = INCREMENT_HIDDEN_NEURON;
+                                next_state = INCREMENT_HIDDEN_COUNTER;
+                                next_embedding_counter = 0;
                             end
                          else
                             begin
@@ -193,7 +196,10 @@ module inference_fsm(
     
     
     logic [4:0] index = SW[4:0];
+    
     assign LED[2:0] = current_state; 
+    assign LED[4:3] = embedding_counter;
+    assign LED[15:5] = read_address[10:0];
     
     hex_driver hexA   (.clk(clk), 
                       .reset(reset),

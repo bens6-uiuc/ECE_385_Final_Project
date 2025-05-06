@@ -75,6 +75,7 @@ module inference(
     logic[15:0]                            ram_data_out;
   
     logic [6:0] token;
+    logic [26:0] read_address;
     
     logic accumulator_input_valid, accumulator_last, accumulator_last_valid;
     logic [15:0] accumulator_data, accumulator_result;
@@ -86,8 +87,6 @@ module inference(
         //.output_token(token)
     //);
     
-    assign token = 0;
-    
     assign execute = SW[15];
         
     inference_fsm FSM(
@@ -96,12 +95,17 @@ module inference(
     .execute(execute),
     .read_data_valid(read_data_valid),
     .SW(SW),
-    .token(token),
+    //.token(token),
     .ram_data_out(ram_data_out),
     
     .LED(LED),
     .output_token(output_token),
-    .read_address(read_address)
+    .read_address(read_address),
+    
+    .hex_segA(hex_segA),
+    .hex_gridA(hex_gridA),
+    .hex_segB(hex_segB),
+    .hex_gridB(hex_gridB)
     );
     
     ram_reader ram_reader_0(
