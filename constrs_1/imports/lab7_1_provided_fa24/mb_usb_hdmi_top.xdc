@@ -537,11 +537,15 @@ connect_debug_port u_ila_0/probe1 [get_nets [list {inference_0/FSM/embedding_cou
 
 
 
+connect_debug_port u_ila_0/probe3 [get_nets [list {inference_0/FSM/embedding_counter[0]_i_1_n_0}]]
+connect_debug_port u_ila_0/probe4 [get_nets [list {inference_0/FSM/embedding_counter[1]_i_1_n_0}]]
+connect_debug_port u_ila_0/probe6 [get_nets [list {inference_0/FSM/embedding_counter[2]_i_1_n_0}]]
+
 create_debug_core u_ila_0 ila
 set_property ALL_PROBE_SAME_MU true [get_debug_cores u_ila_0]
 set_property ALL_PROBE_SAME_MU_CNT 1 [get_debug_cores u_ila_0]
 set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
-set_property C_DATA_DEPTH 4096 [get_debug_cores u_ila_0]
+set_property C_DATA_DEPTH 32768 [get_debug_cores u_ila_0]
 set_property C_EN_STRG_QUAL false [get_debug_cores u_ila_0]
 set_property C_INPUT_PIPE_STAGES 0 [get_debug_cores u_ila_0]
 set_property C_TRIGIN_EN false [get_debug_cores u_ila_0]
@@ -553,28 +557,20 @@ set_property port_width 3 [get_debug_ports u_ila_0/probe0]
 connect_debug_port u_ila_0/probe0 [get_nets [list {inference_0/FSM/LED[0]} {inference_0/FSM/LED[1]} {inference_0/FSM/LED[2]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe1]
-set_property port_width 16 [get_debug_ports u_ila_0/probe1]
-connect_debug_port u_ila_0/probe1 [get_nets [list {inference_0/ram_data_out[0]} {inference_0/ram_data_out[1]} {inference_0/ram_data_out[2]} {inference_0/ram_data_out[3]} {inference_0/ram_data_out[4]} {inference_0/ram_data_out[5]} {inference_0/ram_data_out[6]} {inference_0/ram_data_out[7]} {inference_0/ram_data_out[8]} {inference_0/ram_data_out[9]} {inference_0/ram_data_out[10]} {inference_0/ram_data_out[11]} {inference_0/ram_data_out[12]} {inference_0/ram_data_out[13]} {inference_0/ram_data_out[14]} {inference_0/ram_data_out[15]}]]
+set_property port_width 3 [get_debug_ports u_ila_0/probe1]
+connect_debug_port u_ila_0/probe1 [get_nets [list {inference_0/FSM/embedding_counter[2]} {inference_0/FSM/embedding_counter[3]} {inference_0/FSM/embedding_counter[4]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe2]
-set_property port_width 1 [get_debug_ports u_ila_0/probe2]
-connect_debug_port u_ila_0/probe2 [get_nets [list {SW_IBUF[15]}]]
+set_property port_width 16 [get_debug_ports u_ila_0/probe2]
+connect_debug_port u_ila_0/probe2 [get_nets [list {inference_0/ram_data_out[0]} {inference_0/ram_data_out[1]} {inference_0/ram_data_out[2]} {inference_0/ram_data_out[3]} {inference_0/ram_data_out[4]} {inference_0/ram_data_out[5]} {inference_0/ram_data_out[6]} {inference_0/ram_data_out[7]} {inference_0/ram_data_out[8]} {inference_0/ram_data_out[9]} {inference_0/ram_data_out[10]} {inference_0/ram_data_out[11]} {inference_0/ram_data_out[12]} {inference_0/ram_data_out[13]} {inference_0/ram_data_out[14]} {inference_0/ram_data_out[15]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe3]
 set_property port_width 1 [get_debug_ports u_ila_0/probe3]
-connect_debug_port u_ila_0/probe3 [get_nets [list {inference_0/FSM/embedding_counter[0]_i_1_n_0}]]
+connect_debug_port u_ila_0/probe3 [get_nets [list {SW_IBUF[15]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe4]
 set_property port_width 1 [get_debug_ports u_ila_0/probe4]
-connect_debug_port u_ila_0/probe4 [get_nets [list {inference_0/FSM/embedding_counter[1]_i_1_n_0}]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe5]
-set_property port_width 1 [get_debug_ports u_ila_0/probe5]
-connect_debug_port u_ila_0/probe5 [get_nets [list inference_0/read_data_valid]]
-create_debug_port u_ila_0 probe
-set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe6]
-set_property port_width 1 [get_debug_ports u_ila_0/probe6]
-connect_debug_port u_ila_0/probe6 [get_nets [list {inference_0/FSM/embedding_counter[2]_i_1_n_0}]]
+connect_debug_port u_ila_0/probe4 [get_nets [list inference_0/read_data_valid]]
 set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
 set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
 set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
