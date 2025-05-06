@@ -20,7 +20,7 @@ module inference_fsm(
 
     );
     logic [6:0] token; //TEMP 
-    assign token = 1;
+    assign token = SW[14:8];
     
     typedef enum logic [2:0] {
         RESET,
@@ -42,12 +42,17 @@ module inference_fsm(
     logic [15:0] logits[VOCAB_SIZE];
 
     integer i;
-    logic [5:0] embedding_counter;
-    logic [3:0] next_embedding_counter;
+    logic [2:0] embedding_counter; //THIS WAS 6 BITS MIGHT HAVE BEEN THE ISSUE
+    logic [2:0] next_embedding_counter;
     
-    logic [2:0] hidden_counter; //Keep track of what hidden neuron is being computed
-    logic [2:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
-    logic [6:0] logit_counter; //Keep track of what logic is being computed
+    logic [3:0] hidden_counter; //Keep track of what hidden neuron is being computed
+    logic [3:0] next_hidden_counter;
+    
+    logic [3:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
+    logic [3:0] next_hidden_neuron_counter;
+    
+    logic [7:0] logit_counter; //Keep track of what logic is being computed
+    logic [7:0] next_logit_counter;
         
     localparam VOCAB_SIZE = 76;
     localparam EMBEDDING_SIZE = 4;
@@ -81,7 +86,11 @@ module inference_fsm(
             else
                 begin
                     current_state <= next_state;
+                    
                     embedding_counter <= next_embedding_counter;
+                    hidden_counter <= next_hidden_counter;
+                    hidden_neuron_counter <= next_hidden_neuron_counter;
+                    logit_counter <= next_logit_counter;
                 end
             
             unique case(current_state)
@@ -141,15 +150,7 @@ module inference_fsm(
                 SET_EMBEDDING_ADDRESS:
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-          
-                        if(!read_data_valid)
-                            begin
-                                next_state = GET_EMBEDDING;
-                            end
-                        else
-                            begin
-                                next_state = SET_EMBEDDING_ADDRESS;
-                            end    
+                        next_state = GET_EMBEDDING;
                     end
                 
                 GET_EMBEDDING:
@@ -170,10 +171,9 @@ module inference_fsm(
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                     
-                        if(embedding_counter == (EMBEDDING_SIZE - 1))
+                        if(embedding_counter == (EMBEDDING_SIZE - 1)) //MAYBE NEXT?
                             begin
                                 next_state = INCREMENT_HIDDEN_COUNTER;
-                                next_embedding_counter = 0;
                             end
                          else
                             begin
@@ -183,7 +183,8 @@ module inference_fsm(
                 
                 INCREMENT_HIDDEN_COUNTER:
                     begin
-                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter);
+                        read_address = (token * EMBEDDING_SIZE) + embedding_counter;
+                        next_embedding_counter = 0;
                     end
                 
                 INCREMENT_HIDDEN_NEURON:
