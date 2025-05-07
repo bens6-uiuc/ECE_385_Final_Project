@@ -2,12 +2,24 @@
 
 module inference_fsm(
     input logic clk,
-    input logic reset,
+    input logic reset, //Might have to use a different signal to clear hidden state
     input logic execute,
-    input logic read_data_valid,
     input logic [15:0] SW,
     //input logic [6:0] token,
+    
     input logic [15:0] ram_data_out,
+    input logic read_data_valid,
+    input logic [15:0] accumulator_result,
+    input logic accumulator_last_valid,
+    input logic [15:0] multiply_result,
+    input logic multiply_result_valid,
+
+    output logic [15:0] accumulator_data,
+    output logic accumulator_input_valid,
+    output logic accumulator_last,
+    output logic [15:0] multiply_a_data,
+    output logic [15:0] multiply_b_data,
+    output logic multiply_input_valid,
     
     output logic [15:0] LED,
     output logic [6:0] output_token,
@@ -22,16 +34,33 @@ module inference_fsm(
     logic [6:0] token; //TEMP 
     assign token = SW[14:8];
     
-    typedef enum logic [2:0] {
+    typedef enum logic [4:0] {
         RESET,
         IDLE, //Wait for next execute
         INCREMENT_EMBEDDING_LOAD,
         SET_EMBEDDING_ADDRESS,
         GET_EMBEDDING,
-        LOAD_EMBEDDING,
-        INCREMENT_HIDDEN_COUNTER,
-        INCREMENT_HIDDEN_NEURON
-        
+        LOAD_EMBEDDING, //CONFIRMED EVERYTHING WORKS UNTIL HERE
+        INCREMENT_HH_HIDDEN_COUNTER,
+        INCREMENT_HIDDEN_NEURON,
+        SET_HH_WEIGHT_ADDRESS,
+        GET_HH_WEIGHT,
+        LOAD_HH_MULTIPLY,
+        LOAD_HH_WEIGHT_ACCUMULATOR,
+        SET_HH_BIAS_ADDRESS,
+        GET_HH_BIAS,
+        LOAD_HH_BIAS_ACCUMULATOR,
+        INCREMENT_IH_EMBEDDING,
+        SET_IH_WEIGHT_ADDRESS,
+        GET_IH_WEIGHT,
+        LOAD_IH_MULTIPLY,
+        LOAD_IH_WEIGHT_ACCUMULATOR,
+        SET_IH_BIAS_ADDRESS,
+        GET_IH_BIAS,
+        LOAD_IH_BIAS_ACCUMULATOR,
+        ACCUMULATOR_LAST,
+        LOAD_NEURON, //MAYBE NEED A STATE BEFORE TO GET ACCUMULATOR RESULT?
+        DONE
     } state_t;
     state_t current_state, next_state;
     
@@ -41,8 +70,9 @@ module inference_fsm(
     logic [15:0] embedding_layer[EMBEDDING_SIZE];
     logic [15:0] logits[VOCAB_SIZE];
 
+    //ALL of these counters need to be 1 bit larger than you would think so they can be initialized at -1 I think
     integer i;
-    logic [2:0] embedding_counter; //THIS WAS 6 BITS MIGHT HAVE BEEN THE ISSUE
+    logic [2:0] embedding_counter; 
     logic [2:0] next_embedding_counter;
     
     logic [3:0] hidden_counter; //Keep track of what hidden neuron is being computed
@@ -171,9 +201,9 @@ module inference_fsm(
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                     
-                        if(embedding_counter == (EMBEDDING_SIZE - 1)) //MAYBE NEXT?
+                        if(embedding_counter == (EMBEDDING_SIZE - 1))
                             begin
-                                next_state = INCREMENT_HIDDEN_COUNTER;
+                                next_state = INCREMENT_HH_HIDDEN_COUNTER;
                             end
                          else
                             begin
@@ -181,16 +211,48 @@ module inference_fsm(
                             end 
                     end
                 
-                INCREMENT_HIDDEN_COUNTER:
+                INCREMENT_HH_HIDDEN_COUNTER:
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                         next_embedding_counter = 0;
+                        next_hidden_counter <= hidden_counter + 1;
+                        next_state = INCREMENT_HIDDEN_NEURON
                     end
                 
                 INCREMENT_HIDDEN_NEURON:
                     begin
                          read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+                         next_hidden_neuron_counter <= hidden_neuron_counter + 1;
+                         next_state = 
                     end
+
+                SET_HH_WEIGHT_ADDRESS:
+                    begin
+                        read_address = read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+                        next_state = GET_HH_WEIGHT;
+                    end
+
+                GET_HH_WEIGHT:
+                    begin
+                        read_address = read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+
+                        if(read_data_valid)
+                            begin
+                                next_state = LOAD_HH_MULTIPLY;
+                            end
+                        else
+                            begin
+                                next_state = GET_HH_WEIGHT;
+                            end
+                    end
+                
+                LOAD_HH_MULTIPLY:
+                    begin
+                        
+
+                    end
+
+
             endcase    
         
         end

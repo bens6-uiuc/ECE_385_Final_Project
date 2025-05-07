@@ -97,6 +97,18 @@ module inference(
     .SW(SW),
     //.token(token),
     .ram_data_out(ram_data_out),
+
+    .accumulator_result(accumulator_result),
+    .accumulator_last_valid(accumulator_last_valid),
+    .multiply_result_valid(multiply_result_valid),
+    .multiply_result(multiply_result),
+
+    .accumulator_input_valid(accumulator_input_valid),
+    .accumulator_data(accumulator_data),
+    .accumulator_last(accumulator_last),
+    .multiply_input_valid(multiply_input_valid),
+    .multiply_a_data(multiply_a_data),
+    .multiply_b_data(multiply_b_data),
     
     .LED(LED),
     .output_token(output_token),
