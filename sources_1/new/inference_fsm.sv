@@ -321,7 +321,14 @@ module inference_fsm(
                 
                 WAIT_SET_EMBEDDING_ADDRESS:
                     begin
-                        next_state = GET_EMBEDDING;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_EMBEDDING;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_EMBEDDING_ADDRESS;
+                            end
                     end
                 
                 GET_EMBEDDING:
@@ -376,7 +383,14 @@ module inference_fsm(
 
                 WAIT_SET_HH_WEIGHT_ADDRESS:
                     begin
-                        next_state = GET_HH_WEIGHT;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_HH_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_HH_WEIGHT_ADDRESS;
+                            end
                     end
 
                 GET_HH_WEIGHT:
@@ -430,7 +444,14 @@ module inference_fsm(
 
                 WAIT_SET_HH_BIAS_ADDRESS:
                     begin
-                        next_state = GET_HH_BIAS;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_HH_BIAS;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_HH_BIAS_ADDRESS;
+                            end
                     end
 
                 GET_HH_BIAS:
@@ -470,7 +491,14 @@ module inference_fsm(
 
                 WAIT_SET_IH_WEIGHT_ADDRESS:
                     begin
-                        next_state = GET_IH_WEIGHT;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_IH_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_IH_WEIGHT_ADDRESS;
+                            end
                     end
 
                 GET_IH_WEIGHT:
@@ -523,7 +551,14 @@ module inference_fsm(
 
                 WAIT_SET_IH_BIAS_ADDRESS:
                     begin
-                        next_state = GET_IH_BIAS;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_IH_BIAS;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_IH_BIAS_ADDRESS;
+                            end
                     end
 
                 GET_IH_BIAS:

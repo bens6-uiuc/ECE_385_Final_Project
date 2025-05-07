@@ -22,6 +22,7 @@ module ram_reader(
     
     logic [26:0] old_ram_address;
     logic [127:0] data_burst;
+    logic [2:0] old_word_sel;
     logic [2:0] word_sel;
     
     assign word_sel = read_address[2:0];
@@ -34,6 +35,7 @@ module ram_reader(
             ram_cmd <= 3'b000;       
             ram_en <= 1'b0;        
             old_ram_address <= 'hFFFFFFFF;
+            old_word_sel <= 'b111;
             data_burst <= 'h0;
             read_data_valid <= 1'b0;
         end
@@ -56,6 +58,12 @@ module ram_reader(
                 else
                     data_burst [127:64] <= ram_rd_data; //assign upper words
             end
+            
+            if((old_word_sel != word_sel))
+                begin
+                    old_word_sel <= word_sel;
+                    read_data_valid <= 1'b0;
+                end
         end
      end     
 endmodule
