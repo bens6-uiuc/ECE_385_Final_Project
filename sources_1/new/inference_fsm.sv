@@ -34,15 +34,17 @@ module inference_fsm(
     logic [6:0] token; //TEMP 
     assign token = SW[14:8];
     
-    typedef enum logic [4:0] {
+    typedef enum logic [5:0] {
         RESET,
         IDLE, //Wait for next execute
         INCREMENT_EMBEDDING_LOAD,
+        WAIT_INCREMENT_EMBEDDING_LOAD,
         SET_EMBEDDING_ADDRESS,
         GET_EMBEDDING,
         LOAD_EMBEDDING, //CONFIRMED EVERYTHING WORKS UNTIL HERE
         INCREMENT_HH_HIDDEN_COUNTER,
         INCREMENT_HIDDEN_NEURON,
+        WAIT_INCREMENT_HIDDEN_NEURON,
         SET_HH_WEIGHT_ADDRESS,
         GET_HH_WEIGHT,
         LOAD_HH_MULTIPLY,
@@ -52,6 +54,7 @@ module inference_fsm(
         GET_HH_BIAS,
         LOAD_HH_BIAS_ACCUMULATOR,
         INCREMENT_IH_EMBEDDING,
+        WAIT_INCREMENT_IH_EMBEDDING,
         SET_IH_WEIGHT_ADDRESS,
         GET_IH_WEIGHT,
         LOAD_IH_MULTIPLY,
@@ -293,6 +296,11 @@ module inference_fsm(
                 INCREMENT_EMBEDDING_LOAD:
                     begin
                         next_embedding_counter = embedding_counter + 1;
+                        next_state = WAIT_INCREMENT_EMBEDDING_LOAD;
+                    end
+
+                WAIT_INCREMENT_EMBEDDING_LOAD:
+                    begin
                         next_state = SET_EMBEDDING_ADDRESS;
                     end
                     
@@ -337,7 +345,12 @@ module inference_fsm(
                 INCREMENT_HIDDEN_NEURON:
                     begin
                          next_hidden_neuron_counter <= hidden_neuron_counter + 1;
-                         next_state = SET_HH_WEIGHT_ADDRESS;
+                         next_state = WAIT_INCREMENT_HIDDEN_NEURON;
+                    end
+
+                WAIT_INCREMENT_HIDDEN_NEURON:
+                    begin
+                        next_state = SET_HH_WEIGHT_ADDRESS;
                     end
 
                 SET_HH_WEIGHT_ADDRESS:
@@ -423,22 +436,19 @@ module inference_fsm(
 
                 INCREMENT_IH_EMBEDDING:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-
                         next_embedding_counter = embedding_counter + 1;
+                        next_state = WAIT_INCREMENT_IH_EMBEDDING;
+                    end
+
+                WAIT_INCREMENT_IH_EMBEDDING:
+                    begin
                         next_state = SET_IH_WEIGHT_ADDRESS;
                     end
 
                 SET_IH_WEIGHT_ADDRESS:
                     begin
-                        if(!read_data_valid)
-                            begin
-                                next_state = GET_IH_WEIGHT;
-                            end
-                        else
-                            begin
-                                next_state = SET_IH_WEIGHT_ADDRESS;
-                            end
+                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+                        next_state = GET_IH_WEIGHT;
                     end
 
                 GET_IH_WEIGHT:
