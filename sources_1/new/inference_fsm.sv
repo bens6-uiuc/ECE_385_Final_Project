@@ -150,6 +150,8 @@ module inference_fsm(
                         hidden_counter <= -1;
                         hidden_neuron_counter <= -1;
                         logit_counter <= -1; 
+                        accumulator_last <= 1;
+                        accumulator_input_valid <= 1;
                     end
                     
                 LOAD_EMBEDDING:
@@ -474,7 +476,7 @@ module inference_fsm(
                 INCREMENT_IH_EMBEDDING:
                     begin
                         next_embedding_counter = embedding_counter + 1;
-                        next_state = SET_IH_WEIGHT_ADDRESS;
+                        next_state = WAIT_INCREMENT_IH_EMBEDDING;
                     end
 
                 WAIT_INCREMENT_IH_EMBEDDING:
