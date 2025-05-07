@@ -303,9 +303,7 @@ module inference_fsm(
                     end
                 
                 GET_EMBEDDING:
-                    begin
-                        next_read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-                        
+                    begin        
                         if(read_data_valid)
                             begin
                                 next_state = LOAD_EMBEDDING;
@@ -317,9 +315,7 @@ module inference_fsm(
                     end
                 
                 LOAD_EMBEDDING:
-                    begin
-                        next_read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-                    
+                    begin                    
                         if(embedding_counter == (EMBEDDING_SIZE - 1))
                             begin
                                 next_state = INCREMENT_HH_HIDDEN_COUNTER;
@@ -332,7 +328,6 @@ module inference_fsm(
                 
                 INCREMENT_HH_HIDDEN_COUNTER:
                     begin
-                        next_read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                         next_embedding_counter = -1;
                         next_hidden_neuron_counter = -1;
                         next_hidden_counter <= hidden_counter + 1;
@@ -341,8 +336,6 @@ module inference_fsm(
                 
                 INCREMENT_HIDDEN_NEURON:
                     begin
-                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
-
                          next_hidden_neuron_counter <= hidden_neuron_counter + 1;
                          next_state = SET_HH_WEIGHT_ADDRESS;
                     end
@@ -351,13 +344,18 @@ module inference_fsm(
                     begin
                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
 
-                        next_state = GET_HH_WEIGHT;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_HH_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = SET_HH_WEIGHT_ADDRESS;
+                            end
                     end
 
                 GET_HH_WEIGHT:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
-
                         if(read_data_valid)
                             begin
                                 next_state = LOAD_HH_MULTIPLY;
@@ -370,15 +368,11 @@ module inference_fsm(
                 
                 LOAD_HH_MULTIPLY:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
-
                         next_state = WAIT_HH_MULTIPLY;
                     end
 
                 WAIT_HH_MULTIPLY:
-                    begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
-                        
+                    begin 
                         if(multiply_result_valid)
                             begin
                                 next_state = LOAD_HH_WEIGHT_ACCUMULATOR;
@@ -391,8 +385,6 @@ module inference_fsm(
 
                 LOAD_HH_WEIGHT_ACCUMULATOR:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
-
                         if(hidden_neuron_counter == (LINEAR_SIZE - 1))
                             begin
                                 next_state = SET_HH_BIAS_ADDRESS;
@@ -407,13 +399,19 @@ module inference_fsm(
                     begin
                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter; 
 
-                        next_state = GET_HH_BIAS;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_HH_BIAS;
+                            end
+                        else
+                            begin
+                                next_state = SET_HH_BIAS_ADDRESS;
+                            end
+                        
                     end
 
                 GET_HH_BIAS:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter; 
-
                         if(read_data_valid)
                             begin
                                 next_state = LOAD_HH_BIAS_ACCUMULATOR;
@@ -426,8 +424,6 @@ module inference_fsm(
 
                 LOAD_HH_BIAS_ACCUMULATOR:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter; 
-
                         next_state = INCREMENT_IH_EMBEDDING;
                     end
 
@@ -441,15 +437,18 @@ module inference_fsm(
 
                 SET_IH_WEIGHT_ADDRESS:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-
-                        next_state = GET_IH_WEIGHT;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_IH_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = SET_IH_WEIGHT_ADDRESS;
+                            end
                     end
 
                 GET_IH_WEIGHT:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-
                         if(read_data_valid)
                             begin
                                 next_state = LOAD_IH_MULTIPLY;
@@ -462,15 +461,11 @@ module inference_fsm(
 
                 LOAD_IH_MULTIPLY:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-
                         next_state = WAIT_IH_MULTIPLY;
                     end
 
                 WAIT_IH_MULTIPLY:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-
                         if(multiply_result_valid)
                             begin
                                 next_state = LOAD_IH_WEIGHT_ACCUMULATOR;
@@ -483,8 +478,6 @@ module inference_fsm(
 
                 LOAD_IH_WEIGHT_ACCUMULATOR:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-
                         if(embedding_counter == (EMBEDDING_SIZE - 1))
                             begin
                                 next_state = SET_IH_BIAS_ADDRESS;
@@ -499,13 +492,18 @@ module inference_fsm(
                     begin
                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
 
-                        next_state = GET_IH_BIAS;
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_IH_BIAS;
+                            end
+                        else
+                            begin
+                                next_state = SET_IH_BIAS_ADDRESS;
+                            end
                     end
 
                 GET_IH_BIAS:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
-
                         if(read_data_valid)
                             begin
                                 next_state = LOAD_IH_BIAS_ACCUMULATOR;
@@ -518,22 +516,16 @@ module inference_fsm(
 
                 LOAD_IH_BIAS_ACCUMULATOR:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
-
                         next_state = ACCUMULATOR_LAST;
                     end
 
                 ACCUMULATOR_LAST:
-                    begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
-
+                    begin 
                         next_state = ACCUMULATOR_WAIT;
                     end
 
                 ACCUMULATOR_WAIT:
                     begin
-                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
-
                         if(accumulator_last_valid)
                             begin
                                 next_state = LOAD_NEURON;
