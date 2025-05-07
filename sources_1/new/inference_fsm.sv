@@ -46,6 +46,7 @@ module inference_fsm(
         SET_HH_WEIGHT_ADDRESS,
         GET_HH_WEIGHT,
         LOAD_HH_MULTIPLY,
+        WAIT_HH_MULTIPLY,
         LOAD_HH_WEIGHT_ACCUMULATOR,
         SET_HH_BIAS_ADDRESS,
         GET_HH_BIAS,
@@ -54,11 +55,13 @@ module inference_fsm(
         SET_IH_WEIGHT_ADDRESS,
         GET_IH_WEIGHT,
         LOAD_IH_MULTIPLY,
+        WAIT_IH_MULTIPLY,
         LOAD_IH_WEIGHT_ACCUMULATOR,
         SET_IH_BIAS_ADDRESS,
         GET_IH_BIAS,
         LOAD_IH_BIAS_ACCUMULATOR,
         ACCUMULATOR_LAST,
+        ACCUMULATOR_WAIT,
         LOAD_NEURON, //MAYBE NEED A STATE BEFORE TO GET ACCUMULATOR RESULT?
         DONE
     } state_t;
@@ -108,9 +111,9 @@ module inference_fsm(
                     end
                     
                     embedding_counter <= -1;
-                    hidden_counter <= 0;
-                    hidden_neuron_counter <= 0;
-                    logit_counter <= 0;
+                    hidden_counter <= -1;
+                    hidden_neuron_counter <= -1;
+                    logit_counter <= -1;
                     
                 end
             else
@@ -126,16 +129,117 @@ module inference_fsm(
             unique case(current_state)
                 IDLE:
                     begin
-                        hidden_counter <= 0;
-                        hidden_neuron_counter <= 0;
-                        logit_counter <= 0; 
+                        hidden_counter <= -1;
+                        hidden_neuron_counter <= -1;
+                        logit_counter <= -1; 
                     end
                     
                 LOAD_EMBEDDING:
                     begin
                         embedding_layer[embedding_counter] <= ram_data_out;
                     end    
+
+                INCREMENT_HIDDEN_NEURON:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                    end
+
+                LOAD_HH_MULTIPLY:
+                    begin
+                        multiply_a_data <= ram_data_out;
+                        multiply_b_data <= old_hidden_layer[hidden_neuron_counter];
+                        multiply_input_valid <= 1;
+                    end
+                
+                WAIT_HH_MULTIPLY:
+                    begin
+                        multiply_a_data <= 0;
+                        multiply_b_data <= 0;
+                        multiply_input_valid <= 0;
+                    end
+
+                LOAD_HH_WEIGHT_ACCUMULATOR:
+                    begin
+                        accumulator_data <= multiply_result;
+                        accumulator_input_valid <= 1;
+                    end
+                
+                SET_HH_BIAS_ADDRESS:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                    end
+
+                LOAD_HH_BIAS_ACCUMULATOR:
+                    begin
+                        accumulator_data <= ram_data_out;
+                        accumulator_input_valid <= 1;
+                    end
+
+                INCREMENT_IH_EMBEDDING:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                    end    
+
+                LOAD_IH_MULTIPLY:
+                    begin
+                        multiply_a_data <= ram_data_out;
+                        multiply_b_data <= embedding_layer[embedding_counter];
+                        multiply_input_valid <= 1;
+                    end
+
+                WAIT_IH_MULTIPLY:
+                    begin
+                        multiply_a_data <= 0;
+                        multiply_b_data <= 0;
+                        multiply_input_valid <= 0;
+                    end
                     
+                LOAD_IH_WEIGHT_ACCUMULATOR:
+                    begin
+                        accumulator_data <= multiply_result;
+                        accumulator_input_valid <= 1;
+                    end
+
+                SET_IH_BIAS_ADDRESS:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                    end
+
+                LOAD_IH_BIAS_ACCUMULATOR:
+                    begin
+                        accumulator_data <= ram_data_out;
+                        accumulator_input_valid <= 1;
+                    end
+
+                ACCUMULATOR_LAST:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 1;
+                        accumulator_last <= 1;
+                    end
+
+                ACCUMULATOR_WAIT:
+                    begin
+                        accumulator_input_valid <= 0;
+                        accumulator_last <= 0;
+                    end
+
+                LOAD_NEURON:
+                    begin
+                        new_hidden_layer[hidden_counter] <= accumulator_result;
+                    end
+
+                DONE: //MIGHT HAVE TO DELAY THIS TRANSFER A LITTLE
+                    begin
+                        for(i = 0; i < LINEAR_SIZE; i++)
+                            begin
+                                old_hidden_layer[i] <= new_hidden_layer[i];
+                            end
+                    end
             endcase
         end
     
@@ -143,6 +247,9 @@ module inference_fsm(
         begin
             next_state = current_state;
             next_embedding_counter = embedding_counter;
+            next_hidden_counter = hidden_counter;
+            next_hidden_neuron_counter = hidden_neuron_counter;
+            next_logit_counter = logit_counter;
             read_address = 0;
             
             unique case(current_state)
@@ -160,6 +267,11 @@ module inference_fsm(
                 
                 IDLE:
                     begin 
+                        next_embedding_counter = -1;
+                        next_hidden_counter = -1;
+                        next_hidden_neuron_counter = -1;
+                        next_logit_counter = -1;
+
                         if(execute)
                             begin
                                 next_state = INCREMENT_EMBEDDING_LOAD;
@@ -214,27 +326,29 @@ module inference_fsm(
                 INCREMENT_HH_HIDDEN_COUNTER:
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-                        next_embedding_counter = 0;
+                        next_embedding_counter = -1;
                         next_hidden_counter <= hidden_counter + 1;
-                        next_state = INCREMENT_HIDDEN_NEURON
+                        next_state = INCREMENT_HIDDEN_NEURON;
                     end
                 
                 INCREMENT_HIDDEN_NEURON:
                     begin
                          read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+
                          next_hidden_neuron_counter <= hidden_neuron_counter + 1;
-                         next_state = 
+                         next_state = SET_HH_WEIGHT_ADDRESS;
                     end
 
                 SET_HH_WEIGHT_ADDRESS:
                     begin
-                        read_address = read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+
                         next_state = GET_HH_WEIGHT;
                     end
 
                 GET_HH_WEIGHT:
                     begin
-                        read_address = read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
 
                         if(read_data_valid)
                             begin
@@ -248,10 +362,196 @@ module inference_fsm(
                 
                 LOAD_HH_MULTIPLY:
                     begin
-                        
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
 
+                        next_state = WAIT_HH_MULTIPLY;
                     end
 
+                WAIT_HH_MULTIPLY:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+                        
+                        if(multiply_result_valid)
+                            begin
+                                next_state = LOAD_HH_WEIGHT_ACCUMULATOR;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_HH_MULTIPLY;
+                            end
+                    end
+
+                LOAD_HH_WEIGHT_ACCUMULATOR:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+
+                        if(hidden_neuron_counter == (LINEAR_SIZE - 1))
+                            begin
+                                next_state = SET_HH_BIAS_ADDRESS;
+                            end
+                        else
+                            begin
+                                next_state = INCREMENT_HIDDEN_NEURON;
+                            end
+                    end
+
+                SET_HH_BIAS_ADDRESS:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter; 
+
+                        next_state = GET_HH_BIAS;
+                    end
+
+                GET_HH_BIAS:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter; 
+
+                        if(read_data_valid)
+                            begin
+                                next_state = LOAD_HH_BIAS_ACCUMULATOR;
+                            end
+                        else
+                            begin
+                                next_state = GET_HH_BIAS;
+                            end
+                    end
+
+                LOAD_HH_BIAS_ACCUMULATOR:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + LINEAR_SIZE + hidden_counter; 
+
+                        next_state = INCREMENT_IH_EMBEDDING;
+                    end
+
+                INCREMENT_IH_EMBEDDING:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+
+                        next_embedding_counter = embedding_counter + 1;
+                        next_state = SET_IH_WEIGHT_ADDRESS;
+                    end
+
+                SET_IH_WEIGHT_ADDRESS:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+
+                        next_state = GET_IH_WEIGHT;
+                    end
+
+                GET_IH_WEIGHT:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+
+                        if(read_data_valid)
+                            begin
+                                next_state = LOAD_IH_MULTIPLY;
+                            end
+                        else
+                            begin
+                                next_state = GET_IH_WEIGHT;
+                            end
+                    end
+
+                LOAD_IH_MULTIPLY:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+
+                        next_state = WAIT_IH_MULTIPLY;
+                    end
+
+                WAIT_IH_MULTIPLY:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+
+                        if(multiply_result_valid)
+                            begin
+                                next_state = LOAD_IH_WEIGHT_ACCUMULATOR;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_IH_MULTIPLY;
+                            end
+                    end
+
+                LOAD_IH_WEIGHT_ACCUMULATOR:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
+
+                        if(embedding_counter == (EMBEDDING_SIZE - 1))
+                            begin
+                                next_state = SET_IH_BIAS_ADDRESS;
+                            end
+                        else
+                            begin
+                                next_state = INCREMENT_IH_EMBEDDING;
+                            end
+                    end
+                
+                SET_IH_BIAS_ADDRESS:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
+
+                        next_state = GET_IH_BIAS;
+                    end
+
+                GET_IH_BIAS:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
+
+                        if(read_data_valid)
+                            begin
+                                next_state = LOAD_IH_BIAS_ACCUMULATOR;
+                            end
+                        else
+                            begin
+                                next_state = GET_IH_BIAS;
+                            end
+                    end
+
+                LOAD_IH_BIAS_ACCUMULATOR:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
+
+                        next_state = ACCUMULATOR_LAST;
+                    end
+
+                ACCUMULATOR_LAST:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
+
+                        next_state = ACCUMULATOR_WAIT;
+                    end
+
+                ACCUMULATOR_WAIT:
+                    begin
+                        read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (hidden_counter); 
+
+                        if(accumulator_last_valid)
+                            begin
+                                next_state = LOAD_NEURON;
+                            end
+                        else
+                            begin
+                                next_state = ACCUMULATOR_WAIT;
+                            end
+                    end
+
+                LOAD_NEURON:
+                    begin
+                        if(hidden_counter == (LINEAR_SIZE - 1))
+                            begin
+                                next_state = DONE;
+                            end
+                        else
+                            begin
+                                next_state = INCREMENT_HH_HIDDEN_COUNTER;
+                            end
+                    end
+
+                DONE:
+                    begin
+
+                    end
 
             endcase    
         
