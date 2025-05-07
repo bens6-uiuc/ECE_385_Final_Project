@@ -558,11 +558,12 @@ module inference_fsm(
         end
     
     
-    logic [4:0] index = SW[4:0];
+    logic [2:0] index = SW[2:0];
     
-    assign LED[2:0] = current_state; 
-    assign LED[4:3] = embedding_counter;
-    assign LED[15:5] = read_address[10:0];
+    assign LED[4:0] = current_state; 
+    assign LED[6:5] = embedding_counter;
+    assign LED[11:7] = hidden_counter;
+    assign LED [15:12] = hidden_neuron_counter;
     
     hex_driver hexA   (.clk(clk), 
                       .reset(reset),
@@ -572,7 +573,7 @@ module inference_fsm(
  
     hex_driver hexB   (.clk(clk), 
                       .reset(reset),
-                      .in({embedding_layer[index][15:12], embedding_layer[index][11:8], embedding_layer[index][7:4], embedding_layer[index][3:0]}),
+                      .in({new_hidden_layer[index][15:12], new_hidden_layer[index][11:8], new_hidden_layer[index][7:4], new_hidden_layer[index][3:0]}),
                       .hex_seg(hex_segB),
                       .hex_grid(hex_gridB));
     
