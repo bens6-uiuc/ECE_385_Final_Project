@@ -343,15 +343,9 @@ module inference_fsm(
                 SET_HH_WEIGHT_ADDRESS:
                     begin
                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
+                        
+                        next_state = GET_HH_WEIGHT;
 
-                        if(!read_data_valid)
-                            begin
-                                next_state = GET_HH_WEIGHT;
-                            end
-                        else
-                            begin
-                                next_state = SET_HH_WEIGHT_ADDRESS;
-                            end
                     end
 
                 GET_HH_WEIGHT:
