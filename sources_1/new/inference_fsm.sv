@@ -174,7 +174,7 @@ module inference_fsm(
                         accumulator_input_valid <= 1;
                     end
                 
-                SET_HH_BIAS_ADDRESS:
+                SET_HH_BIAS_ADDRESS, GET_HH_BIAS:
                     begin
                         accumulator_data <= 0;
                         accumulator_input_valid <= 0;
@@ -437,7 +437,7 @@ module inference_fsm(
                 INCREMENT_IH_EMBEDDING:
                     begin
                         next_embedding_counter = embedding_counter + 1;
-                        next_state = WAIT_INCREMENT_IH_EMBEDDING;
+                        next_state = SET_IH_WEIGHT_ADDRESS;
                     end
 
                 WAIT_INCREMENT_IH_EMBEDDING:
