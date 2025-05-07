@@ -307,7 +307,16 @@ module inference_fsm(
                 SET_EMBEDDING_ADDRESS:
                     begin
                         next_read_address = (token * EMBEDDING_SIZE) + embedding_counter;
-                        next_state = GET_EMBEDDING;
+                        //next_state = GET_EMBEDDING;
+
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_EMBEDDING;
+                            end
+                        else
+                            begin
+                                next_state = SET_EMBEDDING_ADDRESS;
+                            end
                     end
                 
                 GET_EMBEDDING:
@@ -357,8 +366,16 @@ module inference_fsm(
                     begin
                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (hidden_counter * LINEAR_SIZE) + (hidden_neuron_counter); 
                         
-                        next_state = GET_HH_WEIGHT;
+                        //next_state = GET_HH_WEIGHT;
 
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_HH_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = SET_HH_WEIGHT_ADDRESS;
+                            end
                     end
 
                 GET_HH_WEIGHT:
@@ -448,7 +465,16 @@ module inference_fsm(
                 SET_IH_WEIGHT_ADDRESS:
                     begin
                         next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (hidden_counter * EMBEDDING_SIZE) + (embedding_counter);
-                        next_state = GET_IH_WEIGHT;
+                        //next_state = GET_IH_WEIGHT;
+
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_IH_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = SET_IH_WEIGHT_ADDRESS;
+                            end
                     end
 
                 GET_IH_WEIGHT:
