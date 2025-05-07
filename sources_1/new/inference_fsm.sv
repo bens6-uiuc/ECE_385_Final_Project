@@ -327,6 +327,7 @@ module inference_fsm(
                     begin
                         read_address = (token * EMBEDDING_SIZE) + embedding_counter;
                         next_embedding_counter = -1;
+                        next_hidden_neuron_counter = -1;
                         next_hidden_counter <= hidden_counter + 1;
                         next_state = INCREMENT_HIDDEN_NEURON;
                     end
