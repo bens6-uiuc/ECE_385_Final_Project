@@ -31,39 +31,42 @@ module ram_reader(
     assign read_data_out = data_burst [word_sel*16 +: 16]; //select 16 bit word from burst
     
     always_ff @(posedge clk) begin
-        if (reset) begin
-            ram_cmd <= 3'b000;       
-            ram_en <= 1'b0;        
-            old_ram_address <= 'hFFFFFFFF;
-            old_word_sel <= 'b111;
-            data_burst <= 'h0;
+    if (reset) begin
+        ram_cmd <= 3'b000;
+        ram_en <= 1'b0;
+        old_ram_address <= 27'h7FFFFFF; 
+        old_word_sel <= 3'b111;
+        data_burst <= 128'h0;
+        read_data_valid <= 1'b0;
+    end else begin
+        if (old_ram_address != read_address && ram_rdy) begin
             read_data_valid <= 1'b0;
+        end else if (old_word_sel != word_sel && !ram_rd_valid) begin 
+            read_data_valid <= 1'b0; 
+        end else if (ram_rd_valid && ram_rd_data_end) begin
+            read_data_valid <= 1'b1;
         end
-        else begin
-            //when address changes (and command FIFO not full), do read
-            if (old_ram_address != read_address && ram_rdy) begin
-                ram_cmd <= 3'b001;
-                read_data_valid <= 1'b0;
-                ram_en <= 1'b1;                             //we only perform reads on full bursts BL=8, so 
-                ram_address <= (read_address & 27'h7FFFFF8);//give SDRAM controller burst addressess only
-                old_ram_address <= read_address;
-            end
-            //when data returns from SDRAM, load into data_burst register
-            if (ram_rd_valid) begin
-                ram_en <= 1'b0;
-                if (ram_rd_data_end) begin
-                    read_data_valid <= 1'b1;
-                    data_burst [63:0] <= ram_rd_data; //assign lower words
-                end
-                else
-                    data_burst [127:64] <= ram_rd_data; //assign upper words
-            end
-            
-            if((old_word_sel != word_sel))
-                begin
-                    old_word_sel <= word_sel;
-                    read_data_valid <= 1'b0;
-                end
+
+        if (old_ram_address != read_address && ram_rdy) begin
+            ram_cmd <= 3'b001;
+            ram_en <= 1'b1;
+            ram_address <= (read_address & 27'h7FFFFF8); 
+            old_ram_address <= read_address; 
+        end else if (ram_rd_valid) begin
+            ram_en <= 1'b0; 
         end
-     end     
+
+        if (ram_rd_valid) begin
+            if (ram_rd_data_end) begin
+                data_burst[63:0] <= ram_rd_data; // Assign lower words
+            end else begin
+                data_burst[127:64] <= ram_rd_data; // Assign upper words
+            end
+        end
+
+        if (old_word_sel != word_sel) begin
+            old_word_sel <= word_sel;
+        end
+    end
+end  
 endmodule
