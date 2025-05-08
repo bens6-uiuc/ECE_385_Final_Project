@@ -67,10 +67,28 @@ module inference_fsm(
         SET_IH_BIAS_ADDRESS,
         WAIT_SET_IH_BIAS_ADDRESS, //30
         GET_IH_BIAS,
-        LOAD_IH_BIAS_ACCUMULATOR,
-        ACCUMULATOR_LAST,
-        ACCUMULATOR_WAIT,
-        LOAD_NEURON, //MAYBE NEED A STATE BEFORE TO GET ACCUMULATOR RESULT?
+        LOAD_IH_BIAS_ACCUMULATOR, //32
+        ACCUMULATOR_LAST_HIDDEN,
+        ACCUMULATOR_WAIT_HIDDEN, //34
+        LOAD_NEURON, 
+
+        INCREMENT_LOGIT_LOAD_COUNTER, //36
+        INCREMENT_LOGIT_COUNTER,
+        WAIT_INCREMENT_LOGIT_COUNTER, //40
+        SET_LINEAR_WEIGHT_ADDRESS,
+        WAIT_SET_LINEAR_WEIGHT_ADDRESS, //42
+        GET_LINEAR_WEIGHT,
+        LOAD_LINEAR_MULTIPLY, //44
+        WAIT_LINEAR_MULTIPLY,
+        LOAD_LINEAR_WEIGHT_ACCUMULATOR, //46
+        SET_LINEAR_BIAS_ADDRESS,
+        WAIT_SET_LINEAR_BIAS_ADDRESS, //48
+        GET_LINEAR_BIAS,
+        LOAD_LINEAR_BIAS_ACCUMULATOR, //50
+        ACCUMULATOR_LAST_LINEAR,
+        ACCUMULATOR_WAIT_LINEAR, //52
+        LOAD_LOGIT,
+
         DONE
     } state_t;
     state_t current_state, next_state;
@@ -91,8 +109,11 @@ module inference_fsm(
     
     logic [3:0] hidden_neuron_counter; //Keep track of what hidden neuron is being used to compute
     logic [3:0] next_hidden_neuron_counter;
+
+    logic [7:0] logit_load_counter; //Keep track of what logic is being computed
+    logic [7:0] next_logit_load_counter;
     
-    logic [7:0] logit_counter; //Keep track of what logic is being computed
+    logic [7:0] logit_counter; //Keep track of what logic is being used to computed
     logic [7:0] next_logit_counter;
         
     logic [26:0] next_read_address;
@@ -125,6 +146,7 @@ module inference_fsm(
                     hidden_counter <= -1;
                     hidden_neuron_counter <= -1;
                     logit_counter <= -1;
+                    logit_load_counter <= -1;
                     read_address <= (VOCAB_SIZE * EMBEDDING_SIZE) + 10; //Set this beyond embedding layer
                     stored_accumulator_result <= 0;
                 end
@@ -136,6 +158,7 @@ module inference_fsm(
                     hidden_counter <= next_hidden_counter;
                     hidden_neuron_counter <= next_hidden_neuron_counter;
                     logit_counter <= next_logit_counter;
+                    logit_load_counter <= next_logit_load_counter;
                     read_address <= next_read_address; 
                 end
 
@@ -145,6 +168,7 @@ module inference_fsm(
                         hidden_counter <= -1;
                         hidden_neuron_counter <= -1;
                         logit_counter <= -1; 
+                        logit_load_counter <= -1;
                         accumulator_last <= 1;
                         accumulator_input_valid <= 1;
                     end
@@ -230,13 +254,13 @@ module inference_fsm(
                         accumulator_input_valid <= 1;
                     end
 
-                ACCUMULATOR_LAST:
+                ACCUMULATOR_LAST_HIDDEN:
                     begin
                         accumulator_input_valid <= 1;
                         accumulator_last <= 1;
                     end
 
-                ACCUMULATOR_WAIT:
+                ACCUMULATOR_WAIT_HIDDEN:
                     begin
                         accumulator_input_valid <= 0;
                         accumulator_last <= 0;
@@ -246,6 +270,62 @@ module inference_fsm(
                 LOAD_NEURON:
                     begin
                         new_hidden_layer[hidden_counter] <= stored_accumulator_result;
+                    end
+
+                INCREMENT_LOGIT_LOAD_COUNTER:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                    end
+
+                LOAD_LINEAR_MULTIPLY:
+                    begin
+                        multiply_a_data <= ram_data_out;
+                        multiply_b_data <= new_hidden_layer[logit_counter];
+                        multiply_input_valid <= 1;
+                    end
+
+                WAIT_LINEAR_MULTIPLY:
+                    begin
+                        multiply_a_data <= 0;
+                        multiply_b_data <= 0;
+                        multiply_input_valid <= 0;
+                    end
+
+                LOAD_LINEAR_WEIGHT_ACCUMULATOR:
+                    begin
+                        accumulator_data <= multiply_result;
+                        accumulator_input_valid <= 1;
+                    end
+
+                SET_LINEAR_BIAS_ADDRESS:
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                    end
+
+                LOAD_LINEAR_BIAS_ACCUMULATOR:
+                    begin
+                        accumulator_data <= ram_data_out;
+                        accumulator_input_valid <= 1;
+                    end
+
+                ACCUMULATOR_LAST_LINEAR:
+                    begin
+                        accumulator_input_valid <= 1;
+                        accumulator_last <= 1;
+                    end
+
+                ACCUMULATOR_WAIT_LINEAR:
+                    begin
+                        accumulator_input_valid <= 0;
+                        accumulator_last <= 0;
+                        stored_accumulator_result <= accumulator_result;
+                    end
+
+                LOAD_LOGIT:
+                    begin
+                        logits[logit_load_counter] <= stored_accumulator_result;
                     end
 
                 DONE: //MIGHT HAVE TO DELAY THIS TRANSFER A LITTLE
@@ -275,6 +355,7 @@ module inference_fsm(
             next_hidden_counter = hidden_counter;
             next_hidden_neuron_counter = hidden_neuron_counter;
             next_logit_counter = logit_counter;
+            next_logit_load_counter = logit_load_counter;
             next_read_address = read_address;
             
             unique case(current_state)
@@ -582,15 +663,15 @@ module inference_fsm(
 
                 LOAD_IH_BIAS_ACCUMULATOR:
                     begin
-                        next_state = ACCUMULATOR_LAST;
+                        next_state = ACCUMULATOR_LAST_HIDDEN;
                     end
 
-                ACCUMULATOR_LAST:
+                ACCUMULATOR_LAST_HIDDEN:
                     begin 
-                        next_state = ACCUMULATOR_WAIT;
+                        next_state = ACCUMULATOR_WAIT_HIDDEN;
                     end
 
-                ACCUMULATOR_WAIT:
+                ACCUMULATOR_WAIT_HIDDEN:
                     begin
                         if(accumulator_last_valid)
                             begin
@@ -598,7 +679,7 @@ module inference_fsm(
                             end
                         else
                             begin
-                                next_state = ACCUMULATOR_WAIT;
+                                next_state = ACCUMULATOR_WAIT_HIDDEN;
                             end
                     end
 
@@ -612,6 +693,104 @@ module inference_fsm(
                             begin
                                 next_state = INCREMENT_HH_HIDDEN_COUNTER;
                             end
+                    end
+
+                INCREMENT_LOGIT_LOAD_COUNTER:
+                    begin
+                        next_logit_load_counter <= logit_load_counter + 1;
+                        next_state = INCREMENT_LOGIT_COUNTER;
+                    end
+
+                INCREMENT_LOGIT_COUNTER:
+                    begin
+                        next_logit_counter <= logit_counter + 1;
+                        next_state = WAIT_INCREMENT_LOGIT_COUNTER;
+                    end
+
+                WAIT_INCREMENT_LOGIT_COUNTER:
+                    begin
+                        next_state = SET_LINEAR_WEIGHT_ADDRESS;
+                    end
+
+                SET_LINEAR_WEIGHT_ADDRESS:
+                    begin
+                        next_read_address = (VOCAB_SIZE * EMBEDDING_SIZE) + (EMBEDDING_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * LINEAR_SIZE) + (LINEAR_SIZE * 2) + (logit_counter * 8); //NEED TO FIGURE OUT
+
+                        next_state = WAIT_SET_LINEAR_WEIGHT_ADDRESS;
+                    end
+
+                WAIT_SET_LINEAR_WEIGHT_ADDRESS:
+                    begin
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_LINEAR_WEIGHT;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_LINEAR_WEIGHT_ADDRESS;
+                            end
+                    end
+
+                GET_LINEAR_WEIGHT:
+                    begin
+                        if(read_data_valid)
+                            begin
+                                next_state = LOAD_LINEAR_MULTIPLY;
+                            end
+                        else
+                            begin
+                                next_state = GET_LINEAR_WEIGHT;
+                            end
+                    end
+
+                LOAD_LINEAR_MULTIPLY:
+                    begin
+
+                    end
+
+                WAIT_LINEAR_MULTIPLY:
+                    begin
+
+                    end
+
+                LOAD_LINEAR_WEIGHT_ACCUMULATOR:
+                    begin
+
+                    end
+
+                SET_LINEAR_BIAS_ADDRESS:
+                    begin
+
+                    end
+
+                WAIT_SET_LINEAR_BIAS_ADDRESS:
+                    begin
+
+                    end
+
+                GET_LINEAR_BIAS:
+                    begin
+
+                    end
+
+                LOAD_LINEAR_BIAS_ACCUMULATOR:
+                    begin
+
+                    end
+
+                ACCUMULATOR_LAST_LINEAR:
+                    begin
+
+                    end
+
+                ACCUMULATOR_WAIT_LINEAR:
+                    begin
+
+                    end
+
+                LOAD_LOGIT:
+                    begin
+
                     end
 
                 DONE:

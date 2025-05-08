@@ -75,6 +75,7 @@ module inference(
     logic[15:0]                            ram_data_out;
   
     logic [6:0] token;
+    logic [7:0] ascii;
     logic [26:0] read_address;
     
     logic accumulator_input_valid, accumulator_last, accumulator_last_valid;
@@ -82,12 +83,31 @@ module inference(
     logic multiply_input_valid, multiply_result_valid;
     logic [15:0] multiply_a_data, multiply_b_data, multiply_result;
     
-    //ascii_to_token (
+    //ascii_to_token tokenize(
         //.input_ascii(input_ascii),
         //.output_token(token)
     //);
     
+    logic done;
+        
     assign execute = SW[15];
+    
+    always_ff @ (posedge ui_clk)
+        begin
+            if(reset)
+                begin
+                    generate_count <= 0;
+                end
+            else if(done)
+                begin
+                    generated_ascii <= ascii;
+                end
+        end
+        
+    //token_to_ascii detokenize (
+        //.input_token(output_token),
+        //.output_ascii(ascii)
+   //);
         
     inference_fsm FSM(
     .clk(ui_clk),

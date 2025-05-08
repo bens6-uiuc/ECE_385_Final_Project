@@ -87,7 +87,6 @@ module final_project(
     logic execute;
     logic [7:0] generated_ascii;
     logic [11:0] generate_count;
-    logic generate_complete;
     
     inference inference_0(
         .clk(clk_ref_i),
