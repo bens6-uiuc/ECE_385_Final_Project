@@ -139,11 +139,6 @@ module inference_fsm(
                     read_address <= next_read_address; 
                 end
 
-            accumulator_input_valid <= 0;
-            multiply_input_valid <= 0;
-            multiply_a_data <= 0;
-            multiply_b_data <= 0;
-
             unique case(current_state)
                 IDLE:
                     begin
@@ -203,6 +198,16 @@ module inference_fsm(
                         accumulator_input_valid <= 0;
                     end    
 
+                WAIT_INCREMENT_IH_EMBEDDING:
+                    begin
+
+                    end
+
+                WAIT_SET_IH_WEIGHT_ADDRESS:
+                    begin
+                        
+                    end
+
                 LOAD_IH_MULTIPLY:
                     begin
                         multiply_a_data <= ram_data_out;
@@ -259,6 +264,16 @@ module inference_fsm(
                             begin
                                 old_hidden_layer[i] <= new_hidden_layer[i];
                             end
+                    end
+
+                default: 
+                    begin
+                        accumulator_data <= 0;
+                        accumulator_input_valid <= 0;
+                        accumulator_last <= 0;
+                        multiply_input_valid <= 0;
+                        multiply_a_data <= 0;
+                        multiply_b_data <= 0;
                     end
             endcase
         end
