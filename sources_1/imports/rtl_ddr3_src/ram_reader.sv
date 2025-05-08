@@ -58,11 +58,13 @@ module ram_reader(
                         begin
                             next_state = DEASSERT_VALID;
                             old_word_sel <= word_sel;
+                            old_ram_address <= read_address;
                         end
                     else if(old_ram_address != read_address && ram_rdy)
                         begin
                             next_state = READ_NEW_BURST;
                             old_ram_address <= read_address;
+                            old_word_sel <= word_sel;
                         end
                     else
                         begin
@@ -150,6 +152,7 @@ module ram_reader(
                 LOAD_NEW_BURST:
                     begin
                         ram_en = 0;
+                        read_data_valid = 0;
                     end
 
                 WAIT_NEW_BURST:
