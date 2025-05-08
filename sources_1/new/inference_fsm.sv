@@ -198,16 +198,6 @@ module inference_fsm(
                         accumulator_input_valid <= 0;
                     end    
 
-                WAIT_INCREMENT_IH_EMBEDDING:
-                    begin
-
-                    end
-
-                WAIT_SET_IH_WEIGHT_ADDRESS:
-                    begin
-                        
-                    end
-
                 LOAD_IH_MULTIPLY:
                     begin
                         multiply_a_data <= ram_data_out;
