@@ -745,52 +745,96 @@ module inference_fsm(
 
                 LOAD_LINEAR_MULTIPLY:
                     begin
-
+                        next_state = WAIT_LINEAR_MULTIPLY;
                     end
 
                 WAIT_LINEAR_MULTIPLY:
                     begin
-
+                        if(multiply_result_valid)
+                            begin
+                                next_state = LOAD_LINEAR_WEIGHT_ACCUMULATOR;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_LINEAR_MULTIPLY;
+                            end
                     end
 
                 LOAD_LINEAR_WEIGHT_ACCUMULATOR:
                     begin
-
+                        if(logit_counter == (VOCAB_SIZE - 1))
+                            begin
+                                next_state = SET_LINEAR_BIAS_ADDRESS;
+                            end
+                        else
+                            begin
+                                next_state = INCREMENT_LOGIT_COUNTER;
+                            end
                     end
 
                 SET_LINEAR_BIAS_ADDRESS:
                     begin
-
+                        next_read_address = 0; //NEED TO FIGURE OUT
+                    
+                        next_state = WAIT_SET_LINEAR_BIAS_ADDRESS;
                     end
 
                 WAIT_SET_LINEAR_BIAS_ADDRESS:
                     begin
-
+                        if(!read_data_valid)
+                            begin
+                                next_state = GET_LINEAR_BIAS;
+                            end
+                        else
+                            begin
+                                next_state = WAIT_SET_LINEAR_BIAS_ADDRESS;
+                            end
                     end
 
                 GET_LINEAR_BIAS:
                     begin
-
+                        if(read_data_valid)
+                            begin
+                                next_state = LOAD_LINEAR_BIAS_ACCUMULATOR;
+                            end
+                        else
+                            begin
+                                next_state = GET_LINEAR_BIAS;
+                            end
                     end
 
                 LOAD_LINEAR_BIAS_ACCUMULATOR:
                     begin
-
+                        next_state = ACCUMULATOR_LAST_LINEAR;
                     end
 
                 ACCUMULATOR_LAST_LINEAR:
                     begin
-
+                        next_state = ACCUMULATOR_WAIT_LINEAR;
                     end
 
                 ACCUMULATOR_WAIT_LINEAR:
                     begin
-
+                        if(accumulator_last_valid)
+                            begin
+                                next_state = LOAD_LOGIT;
+                            end
+                        else
+                            begin
+                                next_state = ACCUMULATOR_WAIT_LINEAR;
+                            end
                     end
 
                 LOAD_LOGIT:
                     begin
-
+                        if(logit_load_counter == (VOCAB_SIZE - 1))
+                            begin
+                                next_state = DONE;
+                            end
+                        else
+                            begin
+                                next_state = INCREMENT_LOGIT_LOAD_COUNTER;
+                            end
                     end
 
                 DONE:

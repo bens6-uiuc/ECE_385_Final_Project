@@ -49,6 +49,7 @@ module ram_reader(
                     next_state = WAIT_READ;
                     old_ram_address <= 'hFFFFFFFF;
                     old_word_sel <= 'b111;
+                    data_burst <= 0;
                 end
 
             WAIT_READ:
@@ -83,6 +84,15 @@ module ram_reader(
 
             LOAD_NEW_BURST:
                 begin
+                    if(ram_rd_data_end)
+                            begin
+                                data_burst [63:0] <= ram_rd_data; 
+                            end
+                        else
+                            begin
+                                data_burst [127:64] <= ram_rd_data;
+                            end
+
                     next_state = WAIT_NEW_BURST;
                 end
 
@@ -112,7 +122,6 @@ module ram_reader(
 
             ram_cmd = 3'b000;      
             ram_en = 1'b0;        
-            data_burst = 0;
             ram_address = 0;
             read_data_valid = 0;
 
@@ -122,14 +131,12 @@ module ram_reader(
                     begin
                         ram_cmd = 3'b000;      
                         ram_en = 1'b0;        
-                        data_burst = 'h0;
                         read_data_valid = 0;
                     end
 
                 WAIT_READ:
                     begin
                         read_data_valid = 1;
-                        data_burst [63:0] = ram_rd_data; 
                     end
 
                 READ_NEW_BURST:
@@ -138,21 +145,11 @@ module ram_reader(
                         ram_en = 1;
                         read_data_valid = 0;
                         ram_address = (read_address & 27'h7FFFFF8);
-                        data_burst [63:0] = ram_rd_data; 
                     end
 
                 LOAD_NEW_BURST:
                     begin
                         ram_en = 0;
-                        if(ram_rd_data_end)
-                            begin
-                                data_burst [63:0] = ram_rd_data; 
-                                read_data_valid = 1;
-                            end
-                        else
-                            begin
-                                data_burst [127:64] = ram_rd_data;
-                            end
                     end
 
                 WAIT_NEW_BURST:
@@ -161,13 +158,11 @@ module ram_reader(
                         ram_en = 0;
                         read_data_valid = 1;
                         ram_address = (read_address & 27'h7FFFFF8);
-                        data_burst [63:0] = ram_rd_data; 
                     end
 
                 DEASSERT_VALID:
                     begin
                         read_data_valid = 0;
-                        data_burst [63:0] = ram_rd_data; 
                     end
 
                 default:
