@@ -566,11 +566,12 @@ connect_debug_port u_ila_0/probe4 [get_nets [list {inference_0/ram_reader_0/curr
 
 
 
+
 create_debug_core u_ila_0 ila
 set_property ALL_PROBE_SAME_MU true [get_debug_cores u_ila_0]
 set_property ALL_PROBE_SAME_MU_CNT 1 [get_debug_cores u_ila_0]
 set_property C_ADV_TRIGGER false [get_debug_cores u_ila_0]
-set_property C_DATA_DEPTH 8192 [get_debug_cores u_ila_0]
+set_property C_DATA_DEPTH 4096 [get_debug_cores u_ila_0]
 set_property C_EN_STRG_QUAL false [get_debug_cores u_ila_0]
 set_property C_INPUT_PIPE_STAGES 0 [get_debug_cores u_ila_0]
 set_property C_TRIGIN_EN false [get_debug_cores u_ila_0]
@@ -582,16 +583,16 @@ set_property port_width 1 [get_debug_ports u_ila_0/probe0]
 connect_debug_port u_ila_0/probe0 [get_nets [list {inference_0/FSM/current_state[5]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe1]
-set_property port_width 16 [get_debug_ports u_ila_0/probe1]
-connect_debug_port u_ila_0/probe1 [get_nets [list {inference_0/FSM/embedding_layer_reg[0][0]} {inference_0/FSM/embedding_layer_reg[0][1]} {inference_0/FSM/embedding_layer_reg[0][2]} {inference_0/FSM/embedding_layer_reg[0][3]} {inference_0/FSM/embedding_layer_reg[0][4]} {inference_0/FSM/embedding_layer_reg[0][5]} {inference_0/FSM/embedding_layer_reg[0][6]} {inference_0/FSM/embedding_layer_reg[0][7]} {inference_0/FSM/embedding_layer_reg[0][8]} {inference_0/FSM/embedding_layer_reg[0][9]} {inference_0/FSM/embedding_layer_reg[0][10]} {inference_0/FSM/embedding_layer_reg[0][11]} {inference_0/FSM/embedding_layer_reg[0][12]} {inference_0/FSM/embedding_layer_reg[0][13]} {inference_0/FSM/embedding_layer_reg[0][14]} {inference_0/FSM/embedding_layer_reg[0][15]}]]
+set_property port_width 12 [get_debug_ports u_ila_0/probe1]
+connect_debug_port u_ila_0/probe1 [get_nets [list {inference_0/ram_reader_0/read_address[0]} {inference_0/ram_reader_0/read_address[1]} {inference_0/ram_reader_0/read_address[2]} {inference_0/ram_reader_0/read_address[3]} {inference_0/ram_reader_0/read_address[4]} {inference_0/ram_reader_0/read_address[5]} {inference_0/ram_reader_0/read_address[6]} {inference_0/ram_reader_0/read_address[7]} {inference_0/ram_reader_0/read_address[8]} {inference_0/ram_reader_0/read_address[9]} {inference_0/ram_reader_0/read_address[10]} {inference_0/ram_reader_0/read_address[11]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe2]
-set_property port_width 10 [get_debug_ports u_ila_0/probe2]
-connect_debug_port u_ila_0/probe2 [get_nets [list {inference_0/ram_reader_0/read_address[0]} {inference_0/ram_reader_0/read_address[1]} {inference_0/ram_reader_0/read_address[2]} {inference_0/ram_reader_0/read_address[3]} {inference_0/ram_reader_0/read_address[4]} {inference_0/ram_reader_0/read_address[5]} {inference_0/ram_reader_0/read_address[6]} {inference_0/ram_reader_0/read_address[7]} {inference_0/ram_reader_0/read_address[8]} {inference_0/ram_reader_0/read_address[9]}]]
+set_property port_width 16 [get_debug_ports u_ila_0/probe2]
+connect_debug_port u_ila_0/probe2 [get_nets [list {inference_0/FSM/embedding_layer_reg[0][0]} {inference_0/FSM/embedding_layer_reg[0][1]} {inference_0/FSM/embedding_layer_reg[0][2]} {inference_0/FSM/embedding_layer_reg[0][3]} {inference_0/FSM/embedding_layer_reg[0][4]} {inference_0/FSM/embedding_layer_reg[0][5]} {inference_0/FSM/embedding_layer_reg[0][6]} {inference_0/FSM/embedding_layer_reg[0][7]} {inference_0/FSM/embedding_layer_reg[0][8]} {inference_0/FSM/embedding_layer_reg[0][9]} {inference_0/FSM/embedding_layer_reg[0][10]} {inference_0/FSM/embedding_layer_reg[0][11]} {inference_0/FSM/embedding_layer_reg[0][12]} {inference_0/FSM/embedding_layer_reg[0][13]} {inference_0/FSM/embedding_layer_reg[0][14]} {inference_0/FSM/embedding_layer_reg[0][15]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe3]
 set_property port_width 16 [get_debug_ports u_ila_0/probe3]
-connect_debug_port u_ila_0/probe3 [get_nets [list {inference_0/multiply_a_data[0]} {inference_0/multiply_a_data[1]} {inference_0/multiply_a_data[2]} {inference_0/multiply_a_data[3]} {inference_0/multiply_a_data[4]} {inference_0/multiply_a_data[5]} {inference_0/multiply_a_data[6]} {inference_0/multiply_a_data[7]} {inference_0/multiply_a_data[8]} {inference_0/multiply_a_data[9]} {inference_0/multiply_a_data[10]} {inference_0/multiply_a_data[11]} {inference_0/multiply_a_data[12]} {inference_0/multiply_a_data[13]} {inference_0/multiply_a_data[14]} {inference_0/multiply_a_data[15]}]]
+connect_debug_port u_ila_0/probe3 [get_nets [list {inference_0/accumulator_result[0]} {inference_0/accumulator_result[1]} {inference_0/accumulator_result[2]} {inference_0/accumulator_result[3]} {inference_0/accumulator_result[4]} {inference_0/accumulator_result[5]} {inference_0/accumulator_result[6]} {inference_0/accumulator_result[7]} {inference_0/accumulator_result[8]} {inference_0/accumulator_result[9]} {inference_0/accumulator_result[10]} {inference_0/accumulator_result[11]} {inference_0/accumulator_result[12]} {inference_0/accumulator_result[13]} {inference_0/accumulator_result[14]} {inference_0/accumulator_result[15]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe4]
 set_property port_width 16 [get_debug_ports u_ila_0/probe4]
@@ -611,7 +612,7 @@ connect_debug_port u_ila_0/probe7 [get_nets [list {inference_0/accumulator_data[
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe8]
 set_property port_width 16 [get_debug_ports u_ila_0/probe8]
-connect_debug_port u_ila_0/probe8 [get_nets [list {inference_0/accumulator_result[0]} {inference_0/accumulator_result[1]} {inference_0/accumulator_result[2]} {inference_0/accumulator_result[3]} {inference_0/accumulator_result[4]} {inference_0/accumulator_result[5]} {inference_0/accumulator_result[6]} {inference_0/accumulator_result[7]} {inference_0/accumulator_result[8]} {inference_0/accumulator_result[9]} {inference_0/accumulator_result[10]} {inference_0/accumulator_result[11]} {inference_0/accumulator_result[12]} {inference_0/accumulator_result[13]} {inference_0/accumulator_result[14]} {inference_0/accumulator_result[15]}]]
+connect_debug_port u_ila_0/probe8 [get_nets [list {inference_0/multiply_a_data[0]} {inference_0/multiply_a_data[1]} {inference_0/multiply_a_data[2]} {inference_0/multiply_a_data[3]} {inference_0/multiply_a_data[4]} {inference_0/multiply_a_data[5]} {inference_0/multiply_a_data[6]} {inference_0/multiply_a_data[7]} {inference_0/multiply_a_data[8]} {inference_0/multiply_a_data[9]} {inference_0/multiply_a_data[10]} {inference_0/multiply_a_data[11]} {inference_0/multiply_a_data[12]} {inference_0/multiply_a_data[13]} {inference_0/multiply_a_data[14]} {inference_0/multiply_a_data[15]}]]
 create_debug_port u_ila_0 probe
 set_property PROBE_TYPE DATA_AND_TRIGGER [get_debug_ports u_ila_0/probe9]
 set_property port_width 15 [get_debug_ports u_ila_0/probe9]

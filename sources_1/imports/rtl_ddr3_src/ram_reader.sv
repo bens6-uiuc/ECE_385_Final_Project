@@ -112,7 +112,7 @@ module ram_reader(
 
             DEASSERT_VALID:
                 begin
-                    next_state = WAIT_READ;
+                    next_state = READ_NEW_BURST;
                 end
 
         endcase
@@ -159,7 +159,7 @@ module ram_reader(
                     begin
                         ram_cmd = 3'b001;
                         ram_en = 0;
-                        read_data_valid = 1;
+                        read_data_valid = 0;
                         ram_address = (read_address & 27'h7FFFFF8);
                     end
 
