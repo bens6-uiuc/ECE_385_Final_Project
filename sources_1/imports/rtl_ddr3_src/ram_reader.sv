@@ -17,6 +17,7 @@ module ram_reader(
 
     logic [26:0] old_ram_address;
     logic [127:0] data_burst;
+    logic [127:0] next_data_burst;
 
     logic [2:0] word_sel;
     logic [2:0] old_word_sel;
@@ -25,12 +26,12 @@ module ram_reader(
 
     assign read_data_out = data_burst[word_sel*16 +: 16]; //select 16 bit word from burst
 
-    typedef enum logic [3:0] {
+    typedef enum logic [2:0] {
         RESET,
         WAIT_READ,
-        READ_NEW_BURST,
-        LOAD_NEW_BURST,
+        SEND_CMD,
         WAIT_NEW_BURST,
+        LOAD_NEW_BURST,
         DEASSERT_VALID
     } state_t;
     state_t current_state, next_state;
@@ -41,6 +42,7 @@ module ram_reader(
         end
         else begin
             current_state <= next_state;  
+            data_burst <= next_data_burst;
         end
 
         unique case(current_state)
@@ -62,7 +64,7 @@ module ram_reader(
                         end
                     else if(old_ram_address != read_address && ram_rdy)
                         begin
-                            next_state = READ_NEW_BURST;
+                            next_state = SEND_CMD;
                             old_ram_address <= read_address;
                             old_word_sel <= word_sel;
                         end
@@ -72,7 +74,12 @@ module ram_reader(
                         end
                 end
 
-            READ_NEW_BURST:
+            SEND_CMD:
+                begin
+                    next_state = WAIT_NEW_BURST;
+                end
+
+            WAIT_NEW_BURST:
                 begin
                     if(ram_rd_valid)
                         begin
@@ -80,39 +87,25 @@ module ram_reader(
                         end
                     else
                         begin
-                            next_state = READ_NEW_BURST;
-                        end   
-                end
-
-            LOAD_NEW_BURST:
-                begin
-                    if(ram_rd_data_end)
-                            begin
-                                data_burst [63:0] <= ram_rd_data; 
-                            end
-                        else
-                            begin
-                                data_burst [127:64] <= ram_rd_data;
-                            end
-
-                    next_state = WAIT_NEW_BURST;
-                end
-
-            WAIT_NEW_BURST:
-                begin
-                    if(ram_rd_data_end)
-                        begin
-                            next_state = WAIT_READ;
-                        end
-                    else
-                        begin
                             next_state = WAIT_NEW_BURST;
                         end
                 end
 
+            LOAD_NEW_BURST:
+                begin                
+                    if(ram_rd_data_end)
+                            begin
+                                next_state = WAIT_READ;
+                            end
+                        else
+                            begin
+                                next_state = LOAD_NEW_BURST;
+                            end
+                end
+
             DEASSERT_VALID:
                 begin
-                    next_state = READ_NEW_BURST;
+                    next_state = WAIT_READ;
                 end
 
         endcase
@@ -121,6 +114,7 @@ module ram_reader(
     always_comb
         begin
             next_state = current_state;
+            next_data_burst = data_burst;
 
             ram_cmd = 3'b000;      
             ram_en = 1'b0;        
@@ -141,18 +135,12 @@ module ram_reader(
                         read_data_valid = 1;
                     end
 
-                READ_NEW_BURST:
+                SEND_CMD:
                     begin
                         ram_cmd = 3'b001;
+                        read_data_valid = 0;
                         ram_en = 1;
-                        read_data_valid = 0;
                         ram_address = (read_address & 27'h7FFFFF8);
-                    end
-
-                LOAD_NEW_BURST:
-                    begin
-                        ram_en = 0;
-                        read_data_valid = 0;
                     end
 
                 WAIT_NEW_BURST:
@@ -160,9 +148,19 @@ module ram_reader(
                         ram_cmd = 3'b001;
                         ram_en = 0;
                         read_data_valid = 0;
-                        ram_address = (read_address & 27'h7FFFFF8);
                     end
 
+                LOAD_NEW_BURST:
+                    begin
+                        ram_en = 0;
+                        read_data_valid = 0;
+                        if (ram_rd_data_end) begin
+                            next_data_burst [63:0] = ram_rd_data; //assign lower words
+                        end
+                        else
+                            next_data_burst [127:64] = ram_rd_data; //assign upper words
+                    end
+                
                 DEASSERT_VALID:
                     begin
                         read_data_valid = 0;

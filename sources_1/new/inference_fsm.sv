@@ -88,8 +88,8 @@ module inference_fsm(
         ACCUMULATOR_LAST_LINEAR,
         ACCUMULATOR_WAIT_LINEAR, //52
         LOAD_LOGIT,
-
-        DONE
+        DONE,
+        WAIT_NEXT_EXECUTE
     } state_t;
     state_t current_state, next_state;
     
@@ -118,10 +118,24 @@ module inference_fsm(
         
     logic [26:0] next_read_address;
     logic [15:0] stored_accumulator_result;
+    logic [15:0] stored_multiplication_result;
 
+    logic [15:0] most_likely_token_value;
+    
     localparam VOCAB_SIZE = 76;
     localparam EMBEDDING_SIZE = 4;
     localparam LINEAR_SIZE = 8;
+    
+    always_ff @ (posedge clk)
+        begin
+            for (i = 0; i < VOCAB_SIZE; i++)
+                begin
+                    if(most_likely_token_value == logits[i])
+                        begin
+                            output_token = i;
+                        end
+                end
+        end
     
     always_ff @ (posedge clk)
         begin
@@ -149,6 +163,7 @@ module inference_fsm(
                     logit_load_counter <= -1;
                     read_address <= (VOCAB_SIZE * EMBEDDING_SIZE) + 10; //Set this beyond embedding layer
                     stored_accumulator_result <= 0;
+                    stored_multiplication_result <= 0;
                 end
             else
                 begin
@@ -234,11 +249,12 @@ module inference_fsm(
                         multiply_a_data <= 0;
                         multiply_b_data <= 0;
                         multiply_input_valid <= 0;
+                        stored_multiplication_result <= multiply_result;
                     end
                     
                 LOAD_IH_WEIGHT_ACCUMULATOR:
                     begin
-                        accumulator_data <= multiply_result;
+                        accumulator_data <= stored_multiplication_result;
                         accumulator_input_valid <= 1;
                     end
 
@@ -721,120 +737,62 @@ module inference_fsm(
 
                 WAIT_SET_LINEAR_WEIGHT_ADDRESS:
                     begin
-                        if(!read_data_valid)
-                            begin
-                                next_state = GET_LINEAR_WEIGHT;
-                            end
-                        else
-                            begin
-                                next_state = WAIT_SET_LINEAR_WEIGHT_ADDRESS;
-                            end
+
                     end
 
                 GET_LINEAR_WEIGHT:
                     begin
-                        if(read_data_valid)
-                            begin
-                                next_state = LOAD_LINEAR_MULTIPLY;
-                            end
-                        else
-                            begin
-                                next_state = GET_LINEAR_WEIGHT;
-                            end
+
                     end
 
                 LOAD_LINEAR_MULTIPLY:
                     begin
-                        next_state = WAIT_LINEAR_MULTIPLY;
+
                     end
 
                 WAIT_LINEAR_MULTIPLY:
                     begin
-                        if(multiply_result_valid)
-                            begin
-                                next_state = LOAD_LINEAR_WEIGHT_ACCUMULATOR;
-                            end
-                        else
-                            begin
-                                next_state = WAIT_LINEAR_MULTIPLY;
-                            end
+
                     end
 
                 LOAD_LINEAR_WEIGHT_ACCUMULATOR:
                     begin
-                        if(logit_counter == (VOCAB_SIZE - 1))
-                            begin
-                                next_state = SET_LINEAR_BIAS_ADDRESS;
-                            end
-                        else
-                            begin
-                                next_state = INCREMENT_LOGIT_COUNTER;
-                            end
+
                     end
 
                 SET_LINEAR_BIAS_ADDRESS:
                     begin
-                        next_read_address = 0; //NEED TO FIGURE OUT
-                    
-                        next_state = WAIT_SET_LINEAR_BIAS_ADDRESS;
+
                     end
 
                 WAIT_SET_LINEAR_BIAS_ADDRESS:
                     begin
-                        if(!read_data_valid)
-                            begin
-                                next_state = GET_LINEAR_BIAS;
-                            end
-                        else
-                            begin
-                                next_state = WAIT_SET_LINEAR_BIAS_ADDRESS;
-                            end
+
                     end
 
                 GET_LINEAR_BIAS:
                     begin
-                        if(read_data_valid)
-                            begin
-                                next_state = LOAD_LINEAR_BIAS_ACCUMULATOR;
-                            end
-                        else
-                            begin
-                                next_state = GET_LINEAR_BIAS;
-                            end
+
                     end
 
                 LOAD_LINEAR_BIAS_ACCUMULATOR:
                     begin
-                        next_state = ACCUMULATOR_LAST_LINEAR;
+
                     end
 
                 ACCUMULATOR_LAST_LINEAR:
                     begin
-                        next_state = ACCUMULATOR_WAIT_LINEAR;
+
                     end
 
                 ACCUMULATOR_WAIT_LINEAR:
                     begin
-                        if(accumulator_last_valid)
-                            begin
-                                next_state = LOAD_LOGIT;
-                            end
-                        else
-                            begin
-                                next_state = ACCUMULATOR_WAIT_LINEAR;
-                            end
+
                     end
 
                 LOAD_LOGIT:
                     begin
-                        if(logit_load_counter == (VOCAB_SIZE - 1))
-                            begin
-                                next_state = DONE;
-                            end
-                        else
-                            begin
-                                next_state = INCREMENT_LOGIT_LOAD_COUNTER;
-                            end
+
                     end
 
                 DONE:
