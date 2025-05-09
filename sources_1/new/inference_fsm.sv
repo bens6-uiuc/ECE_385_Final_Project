@@ -267,7 +267,7 @@ module inference_fsm(
                 LOAD_IH_BIAS_ACCUMULATOR:
                     begin
                         accumulator_data <= ram_data_out;
-                        accumulator_input_valid <= 1;
+                        accumulator_input_valid <= 0;
                     end
 
                 ACCUMULATOR_LAST_HIDDEN:
